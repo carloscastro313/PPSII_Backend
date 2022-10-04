@@ -1,6 +1,6 @@
 import express from "express";
+import morgan from 'morgan';
 import "dotenv/config";
-import testingRouter from "./routes/testing.route";
 
 function main() {
   const PORT = process.env["PORT"] || 4000;
@@ -9,9 +9,7 @@ function main() {
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
 
-  //Routes
-  //Testing
-  app.use(testingRouter);
+  app.use(morgan('dev'));
 
   app.listen(PORT, () => {
     console.log(`Servidor corriendo en el http://localhost:${PORT}`);
