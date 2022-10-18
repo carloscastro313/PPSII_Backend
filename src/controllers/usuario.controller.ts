@@ -39,7 +39,7 @@ export async function login(req: Request, res: Response){
 
     const conn = await connect();
 
-    conn.query('SELECT * FROM usuarios WHERE mail = ' + mail, function(err, result){
+    conn.query('SELECT * FROM usuarios WHERE mail = ' + mail, function(err, results){
         if(err){
             console.log(err);
         } else {
