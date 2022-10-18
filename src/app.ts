@@ -3,7 +3,8 @@ import morgan from 'morgan';
 
 //Routes
 import IndexRoutes from './routes/index.routes'
-import AlumnosRoutes from './routes/alumno.routes'
+import UsuariosRoutes from './routes/usuario.routes'
+import TipoUsuariosRoutes from './routes/tipoUsuario.routes'
 
 export class App {
     
@@ -27,7 +28,8 @@ export class App {
 
     routes(){
         this.app.use(IndexRoutes);
-        this.app.use('/alumnos',AlumnosRoutes);
+        this.app.use('/usuarios',UsuariosRoutes);
+        this.app.use('/tipoUsuarios',TipoUsuariosRoutes);
     }
 
     async listen(){
