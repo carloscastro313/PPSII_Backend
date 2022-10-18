@@ -1,7 +1,10 @@
 import { Request, Response } from 'express'
 import { connect } from '../database'
+import { errorMsg } from '../const/errors'
 import Usuario from '../interface/Usuario'
 import bcrypt from 'bcrypt'
+import { RowDataPacket } from 'mysql2'
+import jwt from 'jsonwebtoken'
 
 export async function getUsuarios(req: Request, res: Response): Promise<Response>{
     const conn = await connect();
@@ -35,12 +38,42 @@ export async function login(req: Request, res: Response){
     const { mail, password } = req.body;
 
     const conn = await connect();
-    const usuario = await conn.query('SELECT Nombre, Apellido, Mail FROM usuarios WHERE mail = ?', [mail]);
+    conn.query('SELECT * FROM usuarios WHERE mail = ?', [mail]),(err: any,data: any) =>{
+        if(err){
+            console.log(err);
+        } else {
+            if(data.length == 0){
+                //No existe usuario
+                res.json({
+                    msg: 'Error',
+                    body: errorMsg.ERROR_EMAIL_NO_EXISTE
+                });
+            } else {
+                //Existe
+                const userPassword = data[0].password;
+                
+                bcrypt.compare(password,userPassword).then((result) =>{
+                    if(result){
+                        //Login Exitoso
+                        const token = jwt.sign({
+                            mail: mail
+                        }, process.env.SECRET || 'SECRET', { expiresIn: '1h'})
 
-    res.json({
-        msg: 'Login',
-        body: usuario
-    })
+                        res.json({
+                            msg: 'Login exitoso',
+                            body: token
+                        });
+                    } else {
+                        //Password incorrecto
+                        res.json({
+                            msg: 'Error',
+                            body: errorMsg.ERROR_CONSTRASEÑA_INCORRECTA
+                        });
+                    }
+                })
+            }
+        }
+    }
 }
 
 export async function getUsuario(req: Request, res: Response): Promise<Response>{
