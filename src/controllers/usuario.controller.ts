@@ -38,42 +38,44 @@ export async function login(req: Request, res: Response){
     const { mail, password } = req.body;
 
     const conn = await connect();
-    conn.query('SELECT * FROM usuarios WHERE mail = ?', [mail]),(err: any,data: any) =>{
+
+    conn.query('SELECT * FROM usuarios WHERE mail = ' + mail, function(err, result){
         if(err){
             console.log(err);
         } else {
-            if(data.length == 0){
+            console.log(3);
+            if(results.length == 0){
                 //No existe usuario
-                res.json({
+                return res.json({
                     msg: 'Error',
                     body: errorMsg.ERROR_EMAIL_NO_EXISTE
                 });
             } else {
                 //Existe
-                const userPassword = data[0].password;
+                const userPassword = results[0].password;
                 
                 bcrypt.compare(password,userPassword).then((result) =>{
                     if(result){
                         //Login Exitoso
                         const token = jwt.sign({
                             mail: mail
-                        }, process.env.SECRET || 'SECRET', { expiresIn: '1h'})
+                        }, process.env.SECRET || 'SECRETO', { expiresIn: '1h'})
 
-                        res.json({
+                        return res.json({
                             msg: 'Login exitoso',
                             body: token
                         });
                     } else {
                         //Password incorrecto
-                        res.json({
+                        return res.json({
                             msg: 'Error',
                             body: errorMsg.ERROR_CONSTRASEÑA_INCORRECTA
                         });
                     }
-                })
+                });
             }
         }
-    }
+    });
 }
 
 export async function getUsuario(req: Request, res: Response): Promise<Response>{
