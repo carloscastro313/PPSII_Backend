@@ -9,9 +9,9 @@ router.route('/')
     .post(validateToken, createUsuario);
 
 router.route('/:UsuarioId')
-    .get(validateToken,getUsuario)
-    .delete(validateToken,deleteUsuario)
-    .put(validateToken,updateUsuario);
+    .get([validateToken],getUsuario)
+    .delete([validateToken],deleteUsuario)
+    .put([validateToken],updateUsuario);
 
 router.route('/login')
     .post(login);

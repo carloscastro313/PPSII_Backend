@@ -1,8 +1,7 @@
-import { createPool } from 'mysql2/promise';
-const dotenv = require('dotenv');
-dotenv.config()
+import { MySQL2Extended } from 'mysql2-extended';
+import { createConnection, createPool } from 'mysql2/promise';
 
-export async function connect(){
+async function getInstanceDB(){
 
     const connection = await createPool({
         host: process.env.HOST,
@@ -11,5 +10,7 @@ export async function connect(){
         password: process.env.PASSWORD,
         connectionLimit: 10
     });
-    return connection;
+    return new MySQL2Extended(connection);
 }
+
+export default getInstanceDB;

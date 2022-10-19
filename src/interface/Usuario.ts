@@ -1,9 +1,9 @@
 export default interface Usuario{
-    id?: string;
-    tipoUsuario: string;
-    nombre: string;
-    apellido: string;
-    dni: string;
-    mail: string;
-    contraseña: string;
+    Id?: string;
+    TipoUsuario: string;
+    Nombre: string;
+    Apellido: string;
+    Dni: string;
+    Mail: string;
+    Contraseña: string;
 }
