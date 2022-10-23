@@ -1,19 +1,28 @@
-import { Router } from 'express'
+import { Router } from "express";
 const router = Router();
 
-import { createUsuario, getUsuarios, getUsuario, deleteUsuario, updateUsuario, login } from '../controllers/usuario.controller'
-import validateToken from './validate_token';
+import {
+  createUsuario,
+  getUsuarios,
+  getUsuario,
+  deleteUsuario,
+  updateUsuario,
+  login,
+  checkSesion,
+} from "../controllers/usuario.controller";
+import validateToken from "./validate_token";
 
-router.route('/')
-    .get(validateToken,getUsuarios)
-    .post(validateToken, createUsuario);
+router
+  .route("/")
+  .get(validateToken, getUsuarios)
+  .post(validateToken, createUsuario);
 
-router.route('/:UsuarioId')
-    .get(validateToken,getUsuario)
-    .delete(validateToken,deleteUsuario)
-    .put(validateToken,updateUsuario);
+router
+  .route("/:UsuarioId")
+  .get(validateToken, getUsuario)
+  .delete(validateToken, deleteUsuario)
+  .put(validateToken, updateUsuario);
 
-router.route('/login')
-    .post(login);
+router.route("/login").post(login).get(validateToken, checkSesion);
 
 export default router;
