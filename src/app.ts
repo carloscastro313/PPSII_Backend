@@ -1,39 +1,39 @@
-import express, { Application } from 'express';
-import morgan from 'morgan';
-
+import express, { Application } from "express";
+import morgan from "morgan";
+import cors from "cors";
 //Routes
-import IndexRoutes from './routes/index.routes'
-import UsuariosRoutes from './routes/usuario.routes'
-import TipoUsuariosRoutes from './routes/tipoUsuario.routes'
+import IndexRoutes from "./routes/index.routes";
+import UsuariosRoutes from "./routes/usuario.routes";
+import TipoUsuariosRoutes from "./routes/tipoUsuario.routes";
 
 export class App {
-    
-    private app: Application;
+  private app: Application;
 
-    constructor(private port?: number | string){
-        this.app = express();
-        this.settings();
-        this.middlewares();
-        this.routes();
-    }
+  constructor(private port?: number | string) {
+    this.app = express();
+    this.settings();
+    this.middlewares();
+    this.routes();
+  }
 
-    settings(){
-        this.app.set('port', this.port || process.env.PORT || 3000);
-    }
+  settings() {
+    this.app.set("port", this.port || process.env.PORT || 3000);
+  }
 
-    middlewares(){
-        this.app.use(morgan('dev'));
-        this.app.use(express.json());
-    }
+  middlewares() {
+    this.app.use(morgan("dev"));
+    this.app.use(express.json());
+    this.app.use(cors());
+  }
 
-    routes(){
-        this.app.use(IndexRoutes);
-        this.app.use('/usuarios',UsuariosRoutes);
-        this.app.use('/tipoUsuarios',TipoUsuariosRoutes);
-    }
+  routes() {
+    this.app.use(IndexRoutes);
+    this.app.use("/usuarios", UsuariosRoutes);
+    this.app.use("/tipoUsuarios", TipoUsuariosRoutes);
+  }
 
-    async listen(){
-        await this.app.listen(this.app.get('port'));
-        console.log('Server on port', this.app.get('port'));
-    }
+  async listen() {
+    await this.app.listen(this.app.get("port"));
+    console.log("Server on port", this.app.get("port"));
+  }
 }
