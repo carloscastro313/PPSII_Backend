@@ -84,6 +84,7 @@ export async function login(req: Request, res: Response) {
     return res.json({
       msg: "Login exitoso",
       token,
+      usuario,
     });
   } catch (error) {
     console.log(error);
@@ -114,6 +115,7 @@ export async function checkSesion(req: Request, res: Response) {
     return res.json({
       msg: "Login exitoso",
       token,
+      usuario,
     });
   } catch (error) {
     return res.status(500).json({
