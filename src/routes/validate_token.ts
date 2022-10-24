@@ -8,12 +8,8 @@ import Usuario from "../interface/Usuario";
 const validateToken = (req: Request, res: Response, next: NextFunction) => {
   const headerToken = req.header("authorization");
 
-  console.log(headerToken);
-
   if (headerToken != undefined && headerToken.startsWith("Bearer ")) {
     const bearerToken = headerToken.slice(7);
-
-    console.log(bearerToken);
 
     try {
       jwt.verify(

@@ -1,4 +1,4 @@
 export default interface Usuario{
-    id?: string;
-    descripcion: string;
+    Id?: string;
+    Descripcion: string;
 }

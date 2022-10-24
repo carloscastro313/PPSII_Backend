@@ -1,5 +1,5 @@
 import { MySQL2Extended } from 'mysql2-extended';
-import { createConnection, createPool } from 'mysql2/promise';
+import { createPool } from 'mysql2/promise';
 
 async function getInstanceDB(){
 

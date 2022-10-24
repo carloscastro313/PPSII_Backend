@@ -5,44 +5,36 @@ import Usuario from "../interface/Usuario";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-export async function getUsuarios(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getUsuarios(req: Request,res: Response): Promise<Response> {
   try {
     const db = await getInstanceDB();
     const usuarios = await db.select<Usuario>("Usuarios");
 
     return res.json(usuarios);
   } catch (error) {
-    console.log(error);
 
     return res.status(500).json({
-      error,
+      msg: errorMsg.ERROR_INESPERADO,
     });
   }
 }
 
 export async function createUsuario(req: Request, res: Response) {
-  const newUsuario: Usuario = req.body;
+  const newUsuario = req.body;
 
   try {
     const db = await getInstanceDB();
 
     newUsuario.Contraseña = await bcrypt.hash(newUsuario.Contraseña, 10);
 
-    await db.insert<Usuario>("Usuarios", {
-      ...newUsuario,
-    });
-
-    console.log(newUsuario);
+    await db.insert<Usuario>("Usuarios", { ...newUsuario });
 
     return res.json({
-      message: "Usuario Created",
+      msg: "Usuario creado",
     });
   } catch (error) {
     return res.status(500).json({
-      error,
+      msg: errorMsg.ERROR_INESPERADO,
     });
   }
 }
@@ -119,15 +111,12 @@ export async function checkSesion(req: Request, res: Response) {
     });
   } catch (error) {
     return res.status(500).json({
-      error,
+      msg: errorMsg.ERROR_INESPERADO,
     });
   }
 }
 
-export async function getUsuario(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getUsuario(req: Request,res: Response): Promise<Response> {
   const id = req.params.UsuarioId;
   try {
     const db = await getInstanceDB();
@@ -136,9 +125,8 @@ export async function getUsuario(
 
     return res.json(usuario);
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
-      error,
+      msg: errorMsg.ERROR_INESPERADO,
     });
   }
 }
@@ -163,32 +151,39 @@ export async function deleteUsuario(req: Request, res: Response) {
     });
   } catch (error) {
     return res.status(500).json({
-      error,
+      msg: errorMsg.ERROR_INESPERADO,
     });
   }
 }
 
 export async function updateUsuario(req: Request, res: Response) {
   const id = req.params.UsuarioId;
+  const newUsuario = req.body;
+
+  await bcrypt.hash(newUsuario.Contraseña,10, (err,encrypted) =>{
+    newUsuario.Contraseña = encrypted;
+  });
+
   try {
     const db = await getInstanceDB();
 
     const existe = await db.select<Usuario>("Usuarios", { Id: id });
-
+    
     if (existe == null)
       return res.status(400).json({
         msg: "No existe el usuario",
       });
-
-    const usuario = await db.update<Usuario>("Usuarios", { Id: id });
+    
+    await db.update<Usuario>("Usuarios", { Id: id, ...newUsuario});
 
     return res.json({
-      message: "Se a modificado el usuario",
-      usuario,
+      msg: "Se a modificado el usuario",
+      newUsuario,
     });
+    
   } catch (error) {
     return res.status(500).json({
-      error,
+      msg: errorMsg.ERROR_INESPERADO,
     });
   }
 }
