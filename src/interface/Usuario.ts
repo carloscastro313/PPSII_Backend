@@ -1,6 +1,6 @@
 export default interface Usuario{
-    Id?: string;
-    TipoUsuario: string;
+    Id?: number;
+    TipoUsuario: number;
     Nombre: string;
     Apellido: string;
     Dni: string;

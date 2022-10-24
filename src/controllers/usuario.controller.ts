@@ -58,7 +58,7 @@ export async function login(req: Request, res: Response) {
 
     const result = await bcrypt.compare(password, usuario.Contraseña);
 
-    if (!result) {
+    if (result) {
       //Password incorrecto
       return res.status(400).json({
         msg: "Error",
@@ -81,7 +81,7 @@ export async function login(req: Request, res: Response) {
   } catch (error) {
     console.log(error);
     return res.status(500).json({
-      error,
+      msg: errorMsg.ERROR_INESPERADO,
     });
   }
 }
@@ -160,9 +160,10 @@ export async function updateUsuario(req: Request, res: Response) {
   const id = req.params.UsuarioId;
   const newUsuario = req.body;
 
-  await bcrypt.hash(newUsuario.Contraseña,10, (err,encrypted) =>{
-    newUsuario.Contraseña = encrypted;
-  });
+  await bcrypt.hash(newUsuario.Contraseña,10).then( hash => {
+      newUsuario.Contraseña = hash;
+    }
+  )
 
   try {
     const db = await getInstanceDB();
@@ -180,8 +181,10 @@ export async function updateUsuario(req: Request, res: Response) {
       msg: "Se a modificado el usuario",
       newUsuario,
     });
-    
+
   } catch (error) {
+    console.log(error);
+    console.log(newUsuario.Contraseña)
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });
