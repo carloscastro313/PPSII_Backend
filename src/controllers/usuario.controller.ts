@@ -4,15 +4,18 @@ import { errorMsg } from "../const/errors";
 import Usuario from "../interface/Usuario";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { getTokenId } from "../helpers/jwt";
 
-export async function getUsuarios(req: Request,res: Response): Promise<Response> {
+export async function getUsuarios(
+  req: Request,
+  res: Response
+): Promise<Response> {
   try {
     const db = await getInstanceDB();
     const usuarios = await db.select<Usuario>("Usuarios");
 
     return res.json(usuarios);
   } catch (error) {
-
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });
@@ -27,12 +30,14 @@ export async function createUsuario(req: Request, res: Response) {
 
     newUsuario.Contraseña = await bcrypt.hash(newUsuario.Contraseña, 10);
 
-    await db.insert<Usuario>("Usuarios", { ...newUsuario });
+    console.log(newUsuario);
+    await db.insert("Usuarios", { ...newUsuario });
 
     return res.json({
       msg: "Usuario creado",
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });
@@ -40,12 +45,12 @@ export async function createUsuario(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
-  const { mail, password } = req.body;
+  const { Mail, Contraseña } = req.body;
 
   try {
     const db = await getInstanceDB();
 
-    const usuario = await db.selectOne<Usuario>("Usuarios", { Mail: mail });
+    const usuario = await db.selectOne<Usuario>("Usuarios", { Mail: Mail });
     console.log(usuario.Contraseña);
 
     if (usuario == null) {
@@ -56,7 +61,7 @@ export async function login(req: Request, res: Response) {
       });
     }
 
-    const result = await bcrypt.compare(password, usuario.Contraseña);
+    const result = await bcrypt.compare(Contraseña, usuario.Contraseña);
 
     if (result) {
       //Password incorrecto
@@ -88,7 +93,8 @@ export async function login(req: Request, res: Response) {
 
 export async function checkSesion(req: Request, res: Response) {
   try {
-    const { id } = req.body;
+    const bearerToken = req.header("authorization") as string;
+    const { id } = getTokenId(bearerToken);
     const db = await getInstanceDB();
     const usuario = await db.selectOne<Usuario>("Usuarios", { Id: id });
 
@@ -110,13 +116,17 @@ export async function checkSesion(req: Request, res: Response) {
       usuario,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });
   }
 }
 
-export async function getUsuario(req: Request,res: Response): Promise<Response> {
+export async function getUsuario(
+  req: Request,
+  res: Response
+): Promise<Response> {
   const id = req.params.UsuarioId;
   try {
     const db = await getInstanceDB();
@@ -160,31 +170,29 @@ export async function updateUsuario(req: Request, res: Response) {
   const id = req.params.UsuarioId;
   const newUsuario = req.body;
 
-  await bcrypt.hash(newUsuario.Contraseña,10).then( hash => {
-      newUsuario.Contraseña = hash;
-    }
-  )
+  await bcrypt.hash(newUsuario.Contraseña, 10).then((hash) => {
+    newUsuario.Contraseña = hash;
+  });
 
   try {
     const db = await getInstanceDB();
 
     const existe = await db.select<Usuario>("Usuarios", { Id: id });
-    
+
     if (existe == null)
       return res.status(400).json({
         msg: "No existe el usuario",
       });
-    
-    await db.update<Usuario>("Usuarios", { Id: id, ...newUsuario});
+
+    await db.update<Usuario>("Usuarios", { ...newUsuario }, { Id: id });
 
     return res.json({
       msg: "Se a modificado el usuario",
       newUsuario,
     });
-
   } catch (error) {
     console.log(error);
-    console.log(newUsuario.Contraseña)
+    console.log(newUsuario.Contraseña);
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });

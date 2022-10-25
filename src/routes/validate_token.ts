@@ -44,8 +44,6 @@ const validateToken = (req: Request, res: Response, next: NextFunction) => {
             });
           }
 
-          req.body.id = usuario.Id;
-
           next();
         }
       );

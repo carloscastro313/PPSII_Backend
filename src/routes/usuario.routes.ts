@@ -23,6 +23,6 @@ router
   .delete(validateToken, deleteUsuario)
   .put(validateToken, updateUsuario);
 
-router.route("/login").post(login).get(validateToken, checkSesion);
-
+router.route("/login").post(login);
+router.route("/check").post(validateToken, checkSesion);
 export default router;
