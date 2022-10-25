@@ -62,8 +62,8 @@ export async function login(req: Request, res: Response) {
     }
 
     const result = await bcrypt.compare(Contraseña, usuario.Contraseña);
-
-    if (result) {
+    console.log(result);
+    if (!result) {
       //Password incorrecto
       return res.status(400).json({
         msg: "Error",
