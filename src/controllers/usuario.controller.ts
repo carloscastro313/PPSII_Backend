@@ -49,12 +49,10 @@ export async function login(req: Request, res: Response) {
 
   try {
     const db = await getInstanceDB();
-
-    const usuario = await db.selectOne<Usuario>("Usuarios", { Mail: Mail });
-    console.log(usuario.Contraseña);
-
-    if (usuario == null) {
-      //No existe usuario
+    var usuario = null;
+    try {
+      usuario = await db.selectOne<Usuario>("Usuarios", { Mail: Mail });
+    } catch (error) {
       return res.status(400).json({
         msg: "Error",
         body: errorMsg.ERROR_EMAIL_NO_EXISTE,
@@ -96,13 +94,15 @@ export async function checkSesion(req: Request, res: Response) {
     const bearerToken = req.header("authorization") as string;
     const { id } = getTokenId(bearerToken);
     const db = await getInstanceDB();
-    const usuario = await db.selectOne<Usuario>("Usuarios", { Id: id });
 
-    if (!usuario)
+    try {
+      var usuario = await db.selectOne<Usuario>("Usuarios", { Id: id });
+    } catch (error) {
       return res.status(400).json({
         msg: "Error",
         body: errorMsg.ERROR_EMAIL_NO_EXISTE,
       });
+    }
 
     const token = jwt.sign(
       { id: usuario.Id },

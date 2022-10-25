@@ -69,7 +69,7 @@ CREATE TABLE PlanEstudio(
     FechaCreacion DATETIME NOT NULL,
     Nombre VARCHAR(100) NOT NULL,
     Duracion INT(11) NOT NULL,
-    CONSTRAINT FK_IdCarreraPlan FOREIGN KEY (IdCarrera) REFERENCES Carrera(Id)
+    CONSTRAINT FK_IdCarreraPlan FOREIGN KEY (IdCarrera) REFERENCES Carrera(
 );
 
 CREATE TABLE Materia(
