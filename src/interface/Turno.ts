@@ -1,4 +1,4 @@
-export default interface TipoUsuario{
+export default interface Turno{
     Id?: number;
     Descripcion: string;
 }

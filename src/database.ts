@@ -8,7 +8,7 @@ async function getInstanceDB(){
         user: process.env.USUARIO,
         database: process.env.DATABASE,
         password: process.env.PASSWORD,
-        connectionLimit: 10
+        connectionLimit: 50
     });
     return new MySQL2Extended(connection);
 }

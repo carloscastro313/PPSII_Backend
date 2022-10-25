@@ -6,10 +6,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { getTokenId } from "../helpers/jwt";
 
-export async function getUsuarios(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getUsuarios(req: Request,res: Response): Promise<Response> {
   try {
     const db = await getInstanceDB();
     const usuarios = await db.select<Usuario>("Usuarios");
@@ -123,10 +120,7 @@ export async function checkSesion(req: Request, res: Response) {
   }
 }
 
-export async function getUsuario(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getUsuario(req: Request,res: Response): Promise<Response> {
   const id = req.params.UsuarioId;
   try {
     const db = await getInstanceDB();

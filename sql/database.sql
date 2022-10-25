@@ -1,4 +1,6 @@
-CREATE DATABASE PPSII
+CREATE DATABASE PPSII;
+
+USE PPSII;
 
 CREATE TABLE TipoUsuario(
     Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -112,4 +114,102 @@ CREATE TABLE InstanciaInscripcion(
     Año VARCHAR(100) NOT NULL,
     IdTipo INT(11) NOT NULL,
     CONSTRAINT FK_IdTipo FOREIGN KEY (IdTipo) REFERENCES TipoInstanciaInscripcion(Id)
+);
+
+CREATE TABLE CarreraTerminada(
+    Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdAlumnoCarrera INT(11) NOT NULL,
+    FechaTerminada DATETIME NOT NULL,
+    PlanEstudio VARCHAR(100),
+    CONSTRAINT FK_IdAlumnoCarrera FOREIGN KEY (IdAlumnoCarrera) REFERENCES AlumnoCarrera(Id)
+);
+
+CREATE TABLE PlanEstudioMateria(
+    Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdMateria INT(11) NOT NULL,
+    IdPlan INT(11) NOT NULL,
+    Cuatrimestre VARCHAR(100) NOT NULL,
+    CONSTRAINT FK_IdMateriaPlan FOREIGN KEY (IdMateria) REFERENCES Materia(Id),
+    CONSTRAINT FK_IdPlanMateria FOREIGN KEY (IdPlan) REFERENCES PlanEstudio(Id)
+);
+
+CREATE TABLE Turno(
+    Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    Descripcion VARCHAR(100) NOT NULL
+);
+
+INSERT INTO Turno(Descripcion) VALUES ('Mañana');
+INSERT INTO Turno(Descripcion) VALUES ('Tarde');
+INSERT INTO Turno(Descripcion) VALUES ('Noche');
+
+CREATE TABLE FranjaHoraria(
+    Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    Descripcion VARCHAR(100) NOT NULL
+);
+
+INSERT INTO FranjaHoraria(Descripcion) VALUES ('Primera hora');
+INSERT INTO FranjaHoraria(Descripcion) VALUES ('Segunda hora');
+INSERT INTO FranjaHoraria(Descripcion) VALUES ('Bloque completo');
+
+CREATE TABLE Cronograma(
+    Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    Dia VARCHAR(100) NOT NULL,
+    IdTurno INT(11) NOT NULL,
+    IdFranjaHoraria INT(11) NOT NULL,
+    CONSTRAINT FK_IdTurno FOREIGN KEY (IdTurno) REFERENCES Turno(Id),
+    CONSTRAINT FK_IdFranjaHoraria FOREIGN KEY (IdFranjaHoraria) REFERENCES FranjaHoraria(Id)
+);
+
+CREATE TABLE MateriaCronograma(
+    Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdMateria INT(11) NOT NULL,
+    IdCronograma INT(11) NOT NULL,
+    CONSTRAINT FK_IdMateriaCronograma FOREIGN KEY (IdMateria) REFERENCES Materia(Id),
+    CONSTRAINT FK_IdCronogramaMateria FOREIGN KEY (IdCronograma) REFERENCES Cronograma(Id)
+);
+
+CREATE TABLE AlumnoMaterias(
+    Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdAlumno INT(11) NOT NULL,
+    IdMateria INT(11) NOT NULL,
+    IdEstadoAcademico INT(11) NOT NULL DEFAULT 1,
+    IdMateriaCronograma INT(11) NOT NULL,
+    NotaPrimerParcial INT(11) NOT NULL,
+    NotaSegundoParcial INT(11) NOT NULL,
+    NotaRecuperatorioPrimerParcial INT(11) NOT NULL,
+    NotaRecuperatorioPrimerParcial2 INT(11) NOT NULL,
+    NotaRecuperatorioSegundoParcial INT(11) NOT NULL,
+    NotaRecuperatorioSegundoParcial2 INT(11) NOT NULL,
+    NotaFinal INT(11) NOT NULL,
+    CONSTRAINT FK_IdAlumnoMateria FOREIGN KEY (IdAlumno) REFERENCES Usuarios(Id),
+    CONSTRAINT FK_IdMateriaAlumno FOREIGN KEY (IdMateria) REFERENCES Materia(Id),
+    CONSTRAINT FK_IdEstadoAcademicoAlumnoMaterias FOREIGN KEY (IdEstadoAcademico) REFERENCES EstadoAcademico(Id),
+    CONSTRAINT FK_IdMateriaCronogramaAlumno FOREIGN KEY (IdMateriaCronograma) REFERENCES MateriaCronograma(Id)
+);
+
+CREATE TABLE DocenteMaterias(
+    Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdDocente INT(11) NOT NULL,
+    IdMateriaCronograma INT(11) NOT NULL,
+    CONSTRAINT FK_IdDocenteMaterias FOREIGN KEY (IdDocente) REFERENCES Usuarios(Id),
+    CONSTRAINT FK_IdMateriaCronogramaDocente FOREIGN KEY (IdMateriaCronograma) REFERENCES MateriaCronograma(Id)
+);
+
+CREATE TABLE ExamenFinal(
+    Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdDocenteMaterias INT(11) NOT NULL,
+    IdCronograma INT(11) NOT NULL,
+    IdDocente INT(11) NOT NULL,
+    Fecha DATETIME NOT NULL,
+    Nota INT(11) NOT NULL,
+    CONSTRAINT FK_IdDocenteMateriasExamen FOREIGN KEY (IdDocenteMaterias) REFERENCES DocenteMaterias(Id),
+    CONSTRAINT FK_IdCronogramaMateriaExamen FOREIGN KEY (IdCronograma) REFERENCES Cronograma(Id)
+);
+
+CREATE TABLE ExamenFinalAlumno(
+    Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdAlumno INT(11) NOT NULL,
+    IdExamenFinal INT(11) NOT NULL,
+    CONSTRAINT FK_IdAlumnoExamen FOREIGN KEY (IdAlumno) REFERENCES Usuarios(Id),
+    CONSTRAINT FK_IdExamenFinalAlumno FOREIGN KEY (IdExamenFinal) REFERENCES ExamenFinal(Id)
 );
