@@ -6,6 +6,9 @@ import IndexRoutes from "./routes/index.routes";
 import UsuariosRoutes from "./routes/usuario.routes";
 import TipoUsuariosRoutes from "./routes/tipoUsuario.routes";
 import AlumnosRoutes from "./routes/alumno.routes"; 
+import DocentesRoutes from "./routes/docente.routes"; 
+import SecretariasRoutes from "./routes/secretaria.routes"; 
+import AdministracionesRoutes from "./routes/administracion.routes"; 
 
 export class App {
   private app: Application;
@@ -32,6 +35,9 @@ export class App {
     this.app.use("/usuarios", UsuariosRoutes);
     this.app.use("/tipoUsuarios", TipoUsuariosRoutes);
     this.app.use("/alumnos", AlumnosRoutes);
+    this.app.use("/docentes", DocentesRoutes);
+    this.app.use("/secretarias", SecretariasRoutes);
+    this.app.use("/administraciones", AdministracionesRoutes);
   }
 
   async listen() {
