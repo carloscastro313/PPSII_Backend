@@ -13,6 +13,7 @@ export async function getUsuarios(req: Request,res: Response): Promise<Response>
 
     return res.json(usuarios);
   } catch (error) {
+
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });
@@ -26,15 +27,33 @@ export async function createUsuario(req: Request, res: Response) {
     const db = await getInstanceDB();
 
     newUsuario.Contraseña = await bcrypt.hash(newUsuario.Contraseña, 10);
+    console.log(newUsuario)
 
-    console.log(newUsuario);
+    var usuario = await db.query("SELECT * FROM Usuarios WHERE Mail = ?" , newUsuario.Mail);
+
+    console.log(usuario);
+
+    if(usuario.length != 0){
+      return res.status(400).json({
+        msg: errorMsg.ERROR_EMAIL_TOMADO,
+      });
+    }
+
+    usuario = await db.query("SELECT * FROM Usuarios WHERE DNI = ?" , newUsuario.Dni);
+
+    if(usuario.length != 0){
+      return res.status(400).json({
+        msg: errorMsg.ERROR_DNI_YA_EXISTE,
+      });
+    }
+
     await db.insert("Usuarios", { ...newUsuario });
 
     return res.json({
       msg: "Usuario creado",
     });
   } catch (error) {
-    console.log(error);
+
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });
@@ -50,6 +69,7 @@ export async function login(req: Request, res: Response) {
     try {
       usuario = await db.selectOne<Usuario>("Usuarios", { Mail: Mail });
     } catch (error) {
+
       return res.status(400).json({
         msg: "Error",
         body: errorMsg.ERROR_EMAIL_NO_EXISTE,
@@ -57,7 +77,7 @@ export async function login(req: Request, res: Response) {
     }
 
     const result = await bcrypt.compare(Contraseña, usuario.Contraseña);
-    console.log(result);
+
     if (!result) {
       //Password incorrecto
       return res.status(400).json({
@@ -79,7 +99,7 @@ export async function login(req: Request, res: Response) {
       usuario,
     });
   } catch (error) {
-    console.log(error);
+
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });
@@ -113,7 +133,7 @@ export async function checkSesion(req: Request, res: Response) {
       usuario,
     });
   } catch (error) {
-    console.log(error);
+
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });
@@ -185,8 +205,7 @@ export async function updateUsuario(req: Request, res: Response) {
       newUsuario,
     });
   } catch (error) {
-    console.log(error);
-    console.log(newUsuario.Contraseña);
+
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });

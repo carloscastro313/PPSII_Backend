@@ -6,4 +6,5 @@ export const errorMsg = {
     ERROR_CONSTRASEÑA_INCORRECTA: "Contraseña incorrecta",
     ERROR_JWT: "Token invalido",
     ERROR_USUARIO_NO_EXISTE: "No existe el usuario",
+    ERROR_DNI_YA_EXISTE: "El DNI ya fue utilizado",
   };
