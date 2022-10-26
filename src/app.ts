@@ -5,6 +5,7 @@ import cors from "cors";
 import IndexRoutes from "./routes/index.routes";
 import UsuariosRoutes from "./routes/usuario.routes";
 import TipoUsuariosRoutes from "./routes/tipoUsuario.routes";
+import AlumnosRoutes from "./routes/alumno.routes"; 
 
 export class App {
   private app: Application;
@@ -30,6 +31,7 @@ export class App {
     this.app.use(IndexRoutes);
     this.app.use("/usuarios", UsuariosRoutes);
     this.app.use("/tipoUsuarios", TipoUsuariosRoutes);
+    this.app.use("/alumnos", AlumnosRoutes);
   }
 
   async listen() {
