@@ -1,9 +1,9 @@
-export default interface Usuario{
-    Id?: number;
-    TipoUsuario: number;
-    Nombre: string;
-    Apellido: string;
-    Dni: string;
-    Mail: string;
-    Contraseña: string;
+export default interface Usuario {
+  Id?: number;
+  TipoUsuario: number;
+  Nombre: string;
+  Apellido: string;
+  DNI: string;
+  Mail: string;
+  Contraseña: string;
 }
