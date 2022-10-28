@@ -46,7 +46,7 @@ export async function createUsuario(req: Request, res: Response) {
 
     usuario = await db.query(
       "SELECT * FROM Usuarios WHERE DNI = ?",
-      newUsuario.DNI
+      newUsuario.Dni
     );
 
     if (usuario.length != 0) {
@@ -220,7 +220,7 @@ export async function updateUsuario(req: Request, res: Response) {
 
     usuario = await db.query(
       "SELECT * FROM Usuarios WHERE DNI = ?",
-      newUsuario.DNI
+      newUsuario.Dni
     );
 
     console.log(existe.Dni);
