@@ -46,7 +46,7 @@ export async function createUsuario(req: Request, res: Response) {
 
     usuario = await db.query(
       "SELECT * FROM Usuarios WHERE DNI = ?",
-      newUsuario.Dni
+      newUsuario.DNI
     );
 
     if (usuario.length != 0) {
