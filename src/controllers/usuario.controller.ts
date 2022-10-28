@@ -220,12 +220,12 @@ export async function updateUsuario(req: Request, res: Response) {
 
     usuario = await db.query(
       "SELECT * FROM Usuarios WHERE DNI = ?",
-      newUsuario.Dni
+      newUsuario.DNI
     );
 
-    console.log(existe.Dni);
+    console.log(existe.DNI);
 
-    if (usuario.length != 0 && existe.Dni != newUsuario.DNI) {
+    if (usuario.length != 0 && existe.DNI != newUsuario.DNI) {
       return res.status(400).json({
         msg: errorMsg.ERROR_DNI_YA_EXISTE,
       });
