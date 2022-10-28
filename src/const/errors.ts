@@ -7,4 +7,5 @@ export const errorMsg = {
     ERROR_JWT: "Token invalido",
     ERROR_USUARIO_NO_EXISTE: "No existe el usuario",
     ERROR_DNI_YA_EXISTE: "El DNI ya fue utilizado",
+    ERROR_INSTANCIA_ACTIVA: "Ya hay una instancia de inscripcion activa para este tipo de instancia",
   };
