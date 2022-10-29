@@ -2,7 +2,7 @@ import { Router } from 'express'
 import validateToken from './validate_token';
 const router = Router();
 
-import { getAdministraciones, createInstanciaInscripcion, getInstanciaInscripcionActivas, getTipoInstanciaInscripciones, getCarreras, createCarrera, getPlanesEstudio, createPlanEstudio } from '../controllers/administracion.controller'
+import { getAdministraciones, createInstanciaInscripcion, getInstanciaInscripcionActivas, getTipoInstanciaInscripciones, getCarreras, createCarrera, getPlanesEstudio, createPlanEstudio, getMaterias, createMateria } from '../controllers/administracion.controller'
 
 router.route('/')
     .get(validateToken,getAdministraciones);
@@ -25,6 +25,10 @@ router.route('/planEstudio')
     .post(validateToken,createPlanEstudio);
 
 router.route('/planEstudio/:CarreraId')
-    .get(validateToken,getPlanesEstudio)
+    .get(validateToken,getPlanesEstudio);
+
+router.route('/materia')
+    .get(validateToken,getMaterias)
+    .post(validateToken,createMateria);
 
 export default router;

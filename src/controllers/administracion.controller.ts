@@ -4,6 +4,7 @@ import { errorMsg } from '../const/errors';
 import getInstanceDB  from '../database'
 import { TiposUsuario } from '../enums/tiposUsuario';
 import Carrera from '../interface/Carrera';
+import Materia from '../interface/Materia';
 import PlanEstudio from '../interface/PlanEstudio';
 import TipoInstanciaInscripcion from '../interface/TipoInstanciaInscripcion';
 import Usuario from '../interface/Usuario';
@@ -179,5 +180,46 @@ export async function getPlanesEstudioByCarreraId(req: Request, res: Response): 
         });
     }
 }
+
+export async function createMateria(req: Request, res: Response): Promise<Response>{
+    const newMateria = req.body;
+
+    try{
+        const db = await getInstanceDB();
+
+        const materias = await db.query("SELECT * FROM Materia WHERE Descripcion = ?",newMateria.Descripcion);
+
+        if(materias.length != 0){
+            return res.status(400).json({
+                msg: errorMsg.ERROR_MATERIA_EXISTE,
+            });
+        }
+
+        await db.insert<Materia>("Materia", { ...newMateria });
+
+        return res.json(newMateria);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+
+export async function getMaterias(req: Request, res: Response): Promise<Response>{
+    try{
+        const db = await getInstanceDB();
+
+        const materias = await db.select<Materia>("Materia");
+
+        return res.json(materias);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+
 
 

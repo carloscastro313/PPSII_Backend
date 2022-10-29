@@ -9,5 +9,6 @@ export const errorMsg = {
     ERROR_DNI_YA_EXISTE: "El DNI ya fue utilizado",
     ERROR_INSTANCIA_ACTIVA: "Ya hay una instancia de inscripcion activa para este tipo de instancia",
     ERROR_CARRERA_EXISTE: "La carrera ya existe",
-    ERROR_PLAN_EXISTE: "El plan ya existe"
+    ERROR_PLAN_EXISTE: "El plan ya existe",
+    ERROR_MATERIA_EXISTE: "La materia ya existe"
   };
