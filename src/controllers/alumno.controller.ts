@@ -32,13 +32,13 @@ export async function createAlumno(req: Request, res: Response) {
       
       if(alumnoValidacion.length != 0){
         return res.status(400).json({
-            msg: errorMsg.ERROR_MATERIA_EXISTE,
+            msg: errorMsg.ERROR_ALUMNO_EXISTE_EN_CARRERA,
         });
       }
 
-      await db.transaction(async ()=> { 
-        await db.insert<Usuario>("Usuarios", { ...newUsuario }); 
-        idAlumno = await db.getLastInsertId();
+      await db.transaction(async t => { 
+        await t.insert<Usuario>("Usuarios", { ...newUsuario }); 
+        idAlumno = await t.getLastInsertId();
       });
 
       if(idAlumno != 0){
@@ -46,10 +46,9 @@ export async function createAlumno(req: Request, res: Response) {
         await db.insert<AlumnoCarrera>("AlumnoCarrera", {...alumnoCarrera}); 
         
         return res.json({
-          msg: "Alumno creado",
+          msg: "El alumno se creo con exito. El legajo del alumno creado es " + idAlumno,
         });
       }
-
 
     } catch (error) {
       console.log(error);

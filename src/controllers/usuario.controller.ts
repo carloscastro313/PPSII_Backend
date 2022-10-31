@@ -24,7 +24,8 @@ export async function getUsuarios(
 
 export async function createUsuario(req: Request, res: Response) {
   const newUsuario = req.body;
-
+  var idUsuario = 0;
+  
   try {
     const db = await getInstanceDB();
 
@@ -55,10 +56,13 @@ export async function createUsuario(req: Request, res: Response) {
       });
     }
 
-    await db.insert<Usuario>("Usuarios", { ...newUsuario });
-
+    await db.transaction(async t => { 
+      await db.insert<Usuario>("Usuarios", { ...newUsuario });
+      idUsuario = await t.getLastInsertId();
+    });
+    
     return res.json({
-      msg: "Usuario creado",
+      msg: "Usuario creado con exito. El legajo es " + idUsuario,
     });
   } catch (error) {
     console.log(error);
@@ -69,17 +73,17 @@ export async function createUsuario(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
-  const { Mail, Contraseña } = req.body;
+  const { Legajo, Contraseña } = req.body;
 
   try {
     const db = await getInstanceDB();
     var usuario = null;
     try {
-      usuario = await db.selectOne<Usuario>("Usuarios", { Mail: Mail });
+      usuario = await db.selectOne<Usuario>("Usuarios", { Id: Legajo });
     } catch (error) {
       return res.status(400).json({
         msg: "Error",
-        body: errorMsg.ERROR_EMAIL_NO_EXISTE,
+        body: errorMsg.ERROR_LEGAJO_NO_EXISTE,
       });
     }
 
@@ -123,7 +127,7 @@ export async function checkSesion(req: Request, res: Response) {
     } catch (error) {
       return res.status(400).json({
         msg: "Error",
-        body: errorMsg.ERROR_EMAIL_NO_EXISTE,
+        body: errorMsg.ERROR_LEGAJO_NO_EXISTE,
       });
     }
 
