@@ -10,5 +10,6 @@ export const errorMsg = {
     ERROR_INSTANCIA_ACTIVA: "Ya hay una instancia de inscripcion activa para este tipo de instancia",
     ERROR_CARRERA_EXISTE: "La carrera ya existe",
     ERROR_PLAN_EXISTE: "El plan ya existe",
-    ERROR_MATERIA_EXISTE: "La materia ya existe"
+    ERROR_MATERIA_EXISTE: "La materia ya existe",
+    ERROR_ALUMNO_EXISTE_EN_CARRERA: "El alumno ya tiene una cuenta para esa carrera"
   };

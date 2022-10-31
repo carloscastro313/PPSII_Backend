@@ -2,9 +2,10 @@ import { Router } from 'express'
 import validateToken from './validate_token';
 const router = Router();
 
-import { getAlumnos } from '../controllers/alumno.controller'
+import { createAlumno, getAlumnos } from '../controllers/alumno.controller'
 
 router.route('/')
-    .get(validateToken,getAlumnos);
+    .get(validateToken,getAlumnos)
+    .post(validateToken, createAlumno);
 
 export default router;

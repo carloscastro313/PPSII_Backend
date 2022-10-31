@@ -114,7 +114,7 @@ export async function getCarreras(req: Request, res: Response): Promise<Response
     try{
         const db = await getInstanceDB();
         const carreras = await db.select<Carrera>("Carrera");
-
+        
         return res.json(carreras);
     } catch (error) {
         console.log(error);
@@ -221,5 +221,17 @@ export async function getMaterias(req: Request, res: Response): Promise<Response
     }
 }
 
+export async function asignarCorrelativasAMateria(req: Request, res: Response): Promise<Response>{
+    try{
+        const db = await getInstanceDB();
 
+        const materias = await db.select<Materia>("Materia");
 
+        return res.json(materias);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}

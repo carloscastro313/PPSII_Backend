@@ -55,12 +55,13 @@ export async function createUsuario(req: Request, res: Response) {
       });
     }
 
-    await db.insert("Usuarios", { ...newUsuario });
+    await db.insert<Usuario>("Usuarios", { ...newUsuario });
 
     return res.json({
       msg: "Usuario creado",
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });
