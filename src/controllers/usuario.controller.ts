@@ -25,7 +25,7 @@ export async function getUsuarios(
 export async function createUsuario(req: Request, res: Response) {
   const newUsuario = req.body;
   var idUsuario = 0;
-  
+
   try {
     const db = await getInstanceDB();
 
@@ -56,11 +56,11 @@ export async function createUsuario(req: Request, res: Response) {
       });
     }
 
-    await db.transaction(async t => { 
-      await db.insert<Usuario>("Usuarios", { ...newUsuario });
+    await db.transaction(async (t) => {
+      await t.insert<Usuario>("Usuarios", { ...newUsuario });
       idUsuario = await t.getLastInsertId();
     });
-    
+
     return res.json({
       msg: "Usuario creado con exito. El legajo es " + idUsuario,
     });
