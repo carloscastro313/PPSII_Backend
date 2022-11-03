@@ -1,11 +1,15 @@
 import { Request, Response } from 'express'
 import { BindValue } from 'mysql2-extended';
+import { ListFormat } from 'typescript';
 import { errorMsg } from '../const/errors';
 import getInstanceDB  from '../database'
 import { TiposUsuario } from '../enums/tiposUsuario';
+import List from '../helpers/list';
 import Carrera from '../interface/Carrera';
+import Correlativa from '../interface/Correlativa';
 import Materia from '../interface/Materia';
 import PlanEstudio from '../interface/PlanEstudio';
+import PlanEstudioMateria from '../interface/PlanEstudioMateria';
 import TipoInstanciaInscripcion from '../interface/TipoInstanciaInscripcion';
 import Usuario from '../interface/Usuario';
 
@@ -110,6 +114,23 @@ export async function createCarrera(req: Request, res: Response): Promise<Respon
     }
 }
 
+export async function updateCarrera(req: Request, res: Response): Promise<Response>{
+    const newCarrera = req.body;
+
+    try{
+        const db = await getInstanceDB();
+
+        await db.update<Carrera>("Carrera", { ...newCarrera },{Id: newCarrera.Id});
+
+        return res.json(newCarrera);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+
 export async function getCarreras(req: Request, res: Response): Promise<Response>{
     try{
         const db = await getInstanceDB();
@@ -125,7 +146,11 @@ export async function getCarreras(req: Request, res: Response): Promise<Response
 }
 
 export async function createPlanEstudio(req: Request, res: Response): Promise<Response>{
-    const newPlanEstudio = req.body;
+    var newPlanEstudio = req.body.planEstudio;
+    var materias = req.body.materias;
+    var idPlan = 0;
+    var anio = 0;
+    const now = new Date;
 
     try{
         const db = await getInstanceDB();
@@ -138,9 +163,25 @@ export async function createPlanEstudio(req: Request, res: Response): Promise<Re
             });
         }
 
-        await db.insert<PlanEstudio>("PlanEstudio", { ...newPlanEstudio });
-        await db.update<Carrera>("Carrera", { PlanActual: newPlanEstudio.Nombre },{ Id: newPlanEstudio.IdCarrera });
+        console.log(materias);
 
+        await db.transaction(async (t) => {
+            await t.insert<PlanEstudio>("PlanEstudio", { ...newPlanEstudio });
+
+            idPlan = await t.getLastInsertId();
+            anio = now.getFullYear();
+            newPlanEstudio.Nombre = anio+"-"+idPlan;
+
+            await t.update<PlanEstudio>("PlanEstudio", { ...newPlanEstudio },{Id: idPlan});
+
+            await t.update<Carrera>("Carrera", { PlanActual: newPlanEstudio.Nombre },{ Id: newPlanEstudio.IdCarrera });
+
+            materias.forEach(async (element: { idMateria: number; cuatrimestre:string; }) => {
+                var planEstudioMateria : PlanEstudioMateria = { IdPlan: idPlan, IdMateria: element.idMateria, Cuatrimestre: element.cuatrimestre};
+                await t.insert<PlanEstudioMateria>("PlanEstudioMateria", { ...planEstudioMateria });
+            });
+          });
+          
         return res.json(newPlanEstudio);
     } catch (error) {
         console.log(error);
@@ -155,8 +196,34 @@ export async function getPlanesEstudio(req: Request, res: Response): Promise<Res
         const db = await getInstanceDB();
 
         const planEstudio = await db.select<PlanEstudio>("PlanEstudio");
-
+        
         return res.json(planEstudio);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+
+export async function getPlanesEstudioById(req: Request, res: Response): Promise<Response>{
+    const id = req.params.idPlan;
+    try{
+        const db = await getInstanceDB();
+
+        var planEstudio = await db.select<PlanEstudio>("PlanEstudio",{ Id: id });
+        var planEstudioMateria = await db.select<PlanEstudioMateria>("PlanEstudioMateria",{ IdPlan: id });
+        var materiasReturn : Materia[] = [];
+        
+        planEstudioMateria.forEach(async element => {
+            var materia : Materia = { Id: 0, Descripcion: ""};
+            materia = await db.selectOne<Materia>("Materia",{ Id: element.IdMateria });
+
+            console.log(materia);
+            materiasReturn.push(materia);
+        });
+
+        return res.json({planEstudio,planEstudioMateria,materiasReturn});
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -182,7 +249,10 @@ export async function getPlanesEstudioByCarreraId(req: Request, res: Response): 
 }
 
 export async function createMateria(req: Request, res: Response): Promise<Response>{
-    const newMateria = req.body;
+    const newMateria = req.body.materia;
+    const correlativas = req.body.correlativas;
+
+    var idMateria = 0;
 
     try{
         const db = await getInstanceDB();
@@ -195,7 +265,15 @@ export async function createMateria(req: Request, res: Response): Promise<Respon
             });
         }
 
-        await db.insert<Materia>("Materia", { ...newMateria });
+        await db.transaction(async (t) => {
+            await t.insert<Materia>("Materia", { ...newMateria });
+            idMateria = await t.getLastInsertId();
+
+            correlativas.forEach(async (element: number) => {
+                var newCorrelativa : Correlativa = { IdCorrelativa : element, IdMateria: idMateria }
+                await t.insert<Correlativa>("Correlativa", { ...newCorrelativa });
+            });
+        });
 
         return res.json(newMateria);
     } catch (error) {
