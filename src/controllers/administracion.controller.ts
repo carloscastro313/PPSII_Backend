@@ -213,17 +213,16 @@ export async function getPlanesEstudioById(req: Request, res: Response): Promise
 
         var planEstudio = await db.select<PlanEstudio>("PlanEstudio",{ Id: id });
         var planEstudioMateria = await db.select<PlanEstudioMateria>("PlanEstudioMateria",{ IdPlan: id });
-        var materiasReturn : Materia[] = [];
+        var materias = [];
         
-        planEstudioMateria.forEach(async element => {
+        for (let i = 0; i < planEstudioMateria.length; i++) {
             var materia : Materia = { Id: 0, Descripcion: ""};
-            materia = await db.selectOne<Materia>("Materia",{ Id: element.IdMateria });
+            materia = await db.selectOne<Materia>("Materia",{ Id: planEstudioMateria[i].IdMateria });
 
-            console.log(materia);
-            materiasReturn.push(materia);
-        });
+            materias.push({...materia,Cuatrimestre: planEstudioMateria[i].Cuatrimestre});  
+        }
 
-        return res.json({planEstudio,planEstudioMateria,materiasReturn});
+        return res.json({planEstudio,materias});
     } catch (error) {
         console.log(error);
         return res.status(500).json({
@@ -284,6 +283,41 @@ export async function createMateria(req: Request, res: Response): Promise<Respon
     }
 }
 
+export async function updateMateria(req: Request, res: Response): Promise<Response>{
+    const newMateria = req.body.materia;
+    const correlativas = req.body.correlativas;
+
+    try{
+        const db = await getInstanceDB();
+
+        const materias = await db.query("SELECT * FROM Materia WHERE Id = ?",newMateria.Id);
+
+        if(materias.length == 0){
+            return res.status(400).json({
+                msg: errorMsg.ERROR_MATERIA_NO_EXISTE
+            });
+        }
+
+        await db.transaction(async (t) => {
+            await t.update<Materia>("Materia", { Descripcion: newMateria.Descripcion },{ Id: newMateria.Id });
+
+            await t.delete<Correlativa>("Correlativa",{ IdMateria: newMateria.Id});
+
+            correlativas.forEach(async (element: number) => {
+                var newCorrelativa : Correlativa = { IdCorrelativa : element, IdMateria: newMateria.Id }
+                await t.insert<Correlativa>("Correlativa", { ...newCorrelativa });
+            });
+        });
+
+        return res.json(newMateria);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+
 export async function getMaterias(req: Request, res: Response): Promise<Response>{
     try{
         const db = await getInstanceDB();
@@ -299,13 +333,25 @@ export async function getMaterias(req: Request, res: Response): Promise<Response
     }
 }
 
-export async function asignarCorrelativasAMateria(req: Request, res: Response): Promise<Response>{
+
+export async function getMateriaById(req: Request, res: Response): Promise<Response>{
+    const materiaId = req.params.materiaId;
+
     try{
         const db = await getInstanceDB();
 
-        const materias = await db.select<Materia>("Materia");
+        const materia = await db.selectOne<Materia>("Materia",{Id: materiaId});
+        var correlativas = await db.select<Correlativa>("Correlativa",{IdMateria: materiaId});
+        var materiasCorrelativas : Materia[]= [];
 
-        return res.json(materias);
+        for (let i = 0; i < correlativas.length; i++) {
+            var materiaC : Materia = { Id: 0, Descripcion: ""};
+            materiaC = await db.selectOne<Materia>("Materia",{ Id: correlativas[i].IdCorrelativa });
+
+            materiasCorrelativas.push(materiaC);  
+        }
+
+        return res.json({materia,materiasCorrelativas});
     } catch (error) {
         console.log(error);
         return res.status(500).json({

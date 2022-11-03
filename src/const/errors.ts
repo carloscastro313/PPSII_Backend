@@ -12,5 +12,6 @@ export const errorMsg = {
     ERROR_PLAN_EXISTE: "El plan ya existe",
     ERROR_MATERIA_EXISTE: "La materia ya existe",
     ERROR_ALUMNO_EXISTE_EN_CARRERA: "El alumno ya tiene una cuenta para esa carrera",
-    ERROR_LEGAJO_NO_EXISTE:"El legajo no existe"
+    ERROR_LEGAJO_NO_EXISTE:"El legajo no existe",
+    ERROR_MATERIA_NO_EXISTE:"No existe una materia con ese Id"
   };
