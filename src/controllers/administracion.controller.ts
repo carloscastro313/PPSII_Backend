@@ -13,21 +13,15 @@ import PlanEstudioMateria from "../interface/PlanEstudioMateria";
 import TipoInstanciaInscripcion from "../interface/TipoInstanciaInscripcion";
 import Usuario from "../interface/Usuario";
 
-export async function getAdministraciones(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getAdministraciones(req: Request,res: Response): Promise<Response> {
   const db = await getInstanceDB();
-  const administraciones = await db.select<Usuario>("Usuarios", {
-    TipoUsuario: TiposUsuario.Administracion,
-  });
+
+  const administraciones = await db.select<Usuario>("Usuarios", {TipoUsuario: TiposUsuario.Administracion});
+
   return res.json(administraciones);
 }
 
-export async function getInstanciaInscripcionActivas(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getInstanciaInscripcionActivas(req: Request,res: Response): Promise<Response> {
   try {
     const db = await getInstanceDB();
     const now = new Date();
@@ -51,16 +45,11 @@ export async function getInstanciaInscripcionActivas(
   }
 }
 
-export async function getTipoInstanciaInscripciones(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getTipoInstanciaInscripciones(req: Request,res: Response): Promise<Response> {
   try {
     const db = await getInstanceDB();
 
-    const tipoInstanciasInscripcion = await db.select<TipoInstanciaInscripcion>(
-      "TipoInstanciaInscripcion"
-    );
+    const tipoInstanciasInscripcion = await db.select<TipoInstanciaInscripcion>("TipoInstanciaInscripcion");
 
     return res.json(tipoInstanciasInscripcion);
   } catch (error) {
@@ -71,10 +60,7 @@ export async function getTipoInstanciaInscripciones(
   }
 }
 
-export async function createInstanciaInscripcion(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function createInstanciaInscripcion(req: Request,res: Response): Promise<Response> {
   const newInstanciaInscripcion = req.body;
 
   try {
@@ -89,10 +75,7 @@ export async function createInstanciaInscripcion(
 
     console.log(values);
 
-    const instanciaInscripciones = await db.query(
-      "SELECT * FROM InstanciaInscripcion WHERE FechaInicio <= ? AND FechaFinal >= ? AND IdTipo = ?",
-      values
-    );
+    const instanciaInscripciones = await db.query("SELECT * FROM InstanciaInscripcion WHERE FechaInicio <= ? AND FechaFinal >= ? AND IdTipo = ?",values);
 
     if (instanciaInscripciones.length != 0) {
       return res.status(400).json({
@@ -111,19 +94,13 @@ export async function createInstanciaInscripcion(
   }
 }
 
-export async function createCarrera(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function createCarrera(req: Request,res: Response): Promise<Response> {
   const newCarrera = req.body;
 
   try {
     const db = await getInstanceDB();
 
-    const carreras = await db.query(
-      "SELECT * FROM Carrera WHERE Descripcion = ?",
-      newCarrera.Descripcion
-    );
+    const carreras = await db.query("SELECT * FROM Carrera WHERE Descripcion = ?",newCarrera.Descripcion);
 
     if (carreras.length != 0) {
       return res.status(400).json({
@@ -142,20 +119,13 @@ export async function createCarrera(
   }
 }
 
-export async function updateCarrera(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function updateCarrera(req: Request,res: Response): Promise<Response> {
   const newCarrera = req.body;
 
   try {
     const db = await getInstanceDB();
 
-    await db.update<Carrera>(
-      "Carrera",
-      { ...newCarrera },
-      { Id: newCarrera.Id }
-    );
+    await db.update<Carrera>("Carrera",{ ...newCarrera },{ Id: newCarrera.Id });
 
     return res.json(newCarrera);
   } catch (error) {
@@ -166,10 +136,7 @@ export async function updateCarrera(
   }
 }
 
-export async function getCarreras(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getCarreras(req: Request,res: Response): Promise<Response> {
   try {
     const db = await getInstanceDB();
     const carreras = await db.select<Carrera>("Carrera");
@@ -183,10 +150,7 @@ export async function getCarreras(
   }
 }
 
-export async function createPlanEstudio(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function createPlanEstudio(req: Request,res: Response): Promise<Response> {
   var newPlanEstudio = req.body.planEstudio;
   var materias = req.body.materias;
   var idPlan = 0;
@@ -205,17 +169,9 @@ export async function createPlanEstudio(
       anio = now.getFullYear();
       newPlanEstudio.Nombre = anio + "-" + idPlan;
 
-      await t.update<PlanEstudio>(
-        "PlanEstudio",
-        { ...newPlanEstudio, FechaCreacion: now },
-        { Id: idPlan }
-      );
+      await t.update<PlanEstudio>("PlanEstudio",{ ...newPlanEstudio, FechaCreacion: now },{ Id: idPlan });
 
-      await t.update<Carrera>(
-        "Carrera",
-        { PlanActual: newPlanEstudio.Nombre },
-        { Id: newPlanEstudio.IdCarrera }
-      );
+      await t.update<Carrera>("Carrera",{ PlanActual: newPlanEstudio.Nombre },{ Id: newPlanEstudio.IdCarrera });
 
       materias.forEach(
         async (element: { idMateria: number; cuatrimestre: string }) => {
@@ -240,10 +196,7 @@ export async function createPlanEstudio(
   }
 }
 
-export async function getPlanesEstudio(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getPlanesEstudio(req: Request,res: Response): Promise<Response> {
   try {
     const db = await getInstanceDB();
 
@@ -258,26 +211,14 @@ export async function getPlanesEstudio(
   }
 }
 
-export async function getPlanesEstudioById(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getPlanesEstudioById(req: Request,res: Response): Promise<Response> {
   const nombrePlan = req.params.idPlan;
   try {
     const db = await getInstanceDB();
 
-    var [planEstudio] = await db.select<PlanEstudio>(
-      "PlanEstudio",
-      {
-        Nombre: nombrePlan,
-      },
-      { limit: 1 }
-    );
+    var [planEstudio] = await db.select<PlanEstudio>("PlanEstudio",{ Nombre: nombrePlan },{ limit: 1 });
 
-    var planEstudioMateria = await db.select<PlanEstudioMateria>(
-      "PlanEstudioMateria",
-      { IdPlan: planEstudio.Id }
-    );
+    var planEstudioMateria = await db.select<PlanEstudioMateria>("PlanEstudioMateria",{ IdPlan: planEstudio.Id });
     var materias = [];
 
     for (let i = 0; i < planEstudioMateria.length; i++) {
@@ -289,6 +230,7 @@ export async function getPlanesEstudioById(
       materias.push({
         ...materia,
         cuatrimestre: planEstudioMateria[i].Cuatrimestre,
+        planEstudioMateriaId: planEstudioMateria[i].Id
       });
     }
 
@@ -301,10 +243,7 @@ export async function getPlanesEstudioById(
   }
 }
 
-export async function getPlanesEstudioByCarreraId(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getPlanesEstudioByCarreraId(req: Request,res: Response): Promise<Response> {
   const idCarrera = req.params.CarreraId;
   try {
     const db = await getInstanceDB();
@@ -322,10 +261,7 @@ export async function getPlanesEstudioByCarreraId(
   }
 }
 
-export async function createMateria(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function createMateria(req: Request,res: Response): Promise<Response> {
   const newMateria = req.body.materia;
   const correlativas = req.body.correlativas;
 
@@ -334,10 +270,7 @@ export async function createMateria(
   try {
     const db = await getInstanceDB();
 
-    const materias = await db.query(
-      "SELECT * FROM Materia WHERE Descripcion = ?",
-      newMateria.Descripcion
-    );
+    const materias = await db.query("SELECT * FROM Materia WHERE Descripcion = ?",newMateria.Descripcion);
 
     if (materias.length != 0) {
       return res.status(400).json({
@@ -367,20 +300,14 @@ export async function createMateria(
   }
 }
 
-export async function updateMateria(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function updateMateria(req: Request,res: Response): Promise<Response> {
   const newMateria = req.body.materia;
   const correlativas = req.body.correlativas;
 
   try {
     const db = await getInstanceDB();
 
-    const materias = await db.query(
-      "SELECT * FROM Materia WHERE Id = ?",
-      newMateria.Id
-    );
+    const materias = await db.query("SELECT * FROM Materia WHERE Id = ?",newMateria.Id);
 
     if (materias.length == 0) {
       return res.status(400).json({
@@ -389,11 +316,7 @@ export async function updateMateria(
     }
 
     await db.transaction(async (t) => {
-      await t.update<Materia>(
-        "Materia",
-        { Descripcion: newMateria.Descripcion },
-        { Id: newMateria.Id }
-      );
+      await t.update<Materia>("Materia",{ Descripcion: newMateria.Descripcion },{ Id: newMateria.Id });
 
       await t.delete<Correlativa>("Correlativa", { IdMateria: newMateria.Id });
 
@@ -415,10 +338,7 @@ export async function updateMateria(
   }
 }
 
-export async function getMaterias(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getMaterias(req: Request,res: Response): Promise<Response> {
   try {
     const db = await getInstanceDB();
 
@@ -433,10 +353,7 @@ export async function getMaterias(
   }
 }
 
-export async function getMateriaById(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getMateriaById(req: Request,res: Response): Promise<Response> {
   const materiaId = req.params.materiaId;
 
   try {

@@ -6,10 +6,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { getTokenId } from "../helpers/jwt";
 
-export async function getUsuarios(
-  req: Request,
-  res: Response
-): Promise<Response> {
+export async function getUsuarios(req: Request,res: Response): Promise<Response> {
   try {
     const db = await getInstanceDB();
     const usuarios = await db.select<Usuario>("Usuarios");
@@ -45,10 +42,7 @@ export async function createUsuario(req: Request, res: Response) {
       });
     }
 
-    usuario = await db.query(
-      "SELECT * FROM Usuarios WHERE DNI = ?",
-      newUsuario.DNI
-    );
+    usuario = await db.query("SELECT * FROM Usuarios WHERE DNI = ?",newUsuario.DNI);
 
     if (usuario.length != 0) {
       return res.status(400).json({
