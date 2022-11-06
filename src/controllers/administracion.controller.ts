@@ -3,14 +3,19 @@ import { BindValue } from "mysql2-extended";
 import { ListFormat } from "typescript";
 import { errorMsg } from "../const/errors";
 import getInstanceDB from "../database";
+import { mapFranjaHoraria } from "../enums/franjaHoraria";
 import { TiposUsuario } from "../enums/tiposUsuario";
+import { mapTurno, Turnos } from "../enums/turnos";
 import List from "../helpers/list";
 import Carrera from "../interface/Carrera";
 import Correlativa from "../interface/Correlativa";
+import Cronograma from "../interface/Cronograma";
+import FranjaHoraria from "../interface/FranjaHoraria";
 import Materia from "../interface/Materia";
 import PlanEstudio from "../interface/PlanEstudio";
 import PlanEstudioMateria from "../interface/PlanEstudioMateria";
 import TipoInstanciaInscripcion from "../interface/TipoInstanciaInscripcion";
+import Turno from "../interface/Turno";
 import Usuario from "../interface/Usuario";
 
 export async function getAdministraciones(req: Request,res: Response): Promise<Response> {
@@ -173,21 +178,29 @@ export async function createPlanEstudio(req: Request,res: Response): Promise<Res
 
       await t.update<Carrera>("Carrera",{ PlanActual: newPlanEstudio.Nombre },{ Id: newPlanEstudio.IdCarrera });
 
-      materias.forEach(
-        async (element: { idMateria: number; cuatrimestre: string }) => {
-          var planEstudioMateria: PlanEstudioMateria = {
+      for (let i = 0; i < materias.length; i++) {
+        var planEstudioMateria: PlanEstudioMateria = {
             IdPlan: idPlan,
-            IdMateria: element.idMateria,
-            Cuatrimestre: element.cuatrimestre,
-          };
-          await t.insert<PlanEstudioMateria>("PlanEstudioMateria", {
-            ...planEstudioMateria,
-          });
-        }
-      );
+            IdMateria: materias[i].IdMateria,
+            Cuatrimestre: materias[i].Cuatrimestre,
+            IdCronograma: 0
+        };
+
+        await t.insert<PlanEstudioMateria>("PlanEstudioMateria", {...planEstudioMateria});
+        var idPlanEstudioMateria = await t.getLastInsertId();
+
+        var cronograma : Cronograma = { IdFranjaHoraria: materias[i].IdFranjaHoraria, IdTurno: materias[i].IdTurno, Dia: materias[i].Dia };
+        var IdCronograma = 0;
+
+        await t.insert<Cronograma>("Cronograma",{...cronograma});
+        IdCronograma = await t.getLastInsertId();
+        await t.update<PlanEstudioMateria>("PlanEstudioMateria",{IdCronograma : IdCronograma}, {Id: idPlanEstudioMateria});
+      }
+
     });
 
     return res.json(newPlanEstudio);
+
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -223,14 +236,24 @@ export async function getPlanesEstudioById(req: Request,res: Response): Promise<
 
     for (let i = 0; i < planEstudioMateria.length; i++) {
       var materia: Materia = { Id: 0, Descripcion: "" };
-      materia = await db.selectOne<Materia>("Materia", {
-        Id: planEstudioMateria[i].IdMateria,
+      materia = await db.selectOne<Materia>("Materia", { Id: planEstudioMateria[i].IdMateria });
+
+      var cronograma : Cronograma = await db.selectOne<Cronograma>("Cronograma", {
+        Id: planEstudioMateria[i].IdCronograma
       });
+
+      var turno =  mapTurno(cronograma.IdTurno);
+      var franjaHoraria = mapFranjaHoraria(cronograma.IdFranjaHoraria);
 
       materias.push({
         ...materia,
         cuatrimestre: planEstudioMateria[i].Cuatrimestre,
-        planEstudioMateriaId: planEstudioMateria[i].Id
+        planEstudioMateriaId: planEstudioMateria[i].Id,
+        turnoId: cronograma.IdTurno,
+        turno: turno,
+        franjaHorariaId: cronograma.IdFranjaHoraria,
+        franjaHoraria: franjaHoraria,
+        dia: cronograma.Dia
       });
     }
 
@@ -381,4 +404,107 @@ export async function getMateriaById(req: Request,res: Response): Promise<Respon
       msg: errorMsg.ERROR_INESPERADO,
     });
   }
+}
+
+export async function getTurnos(req: Request,res: Response): Promise<Response> {
+    try {
+        const db = await getInstanceDB();
+
+        var turnos = await db.select<Turno>("Turno");
+
+        return res.json(turnos);
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+          msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+ }
+
+ export async function getFranjaHoraria(req: Request,res: Response): Promise<Response> {
+    try {
+        const db = await getInstanceDB();
+
+        var franjasHorarias = await db.select<FranjaHoraria>("FranjaHoraria");
+
+        return res.json(franjasHorarias);
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+          msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+ }
+
+export async function generarCronograma(req: Request,res: Response): Promise<Response> {
+    const cronogramas = req.body.cronogramas;
+    
+    try {
+        const db = await getInstanceDB();
+
+        for (let i = 0; i < cronogramas.length; i++) {
+            var cronograma : Cronograma = { IdFranjaHoraria: cronogramas[i].IdFranjaHoraria, IdTurno: cronogramas[i].IdTurno, Dia: cronogramas[i].Dia };
+            var IdCronograma = 0;
+
+            await db.transaction(async (t) => {
+                await t.insert<Cronograma>("Cronograma",{...cronograma});
+                IdCronograma = await t.getLastInsertId();
+                await t.update<PlanEstudioMateria>("PlanEstudioMateria",{IdCronograma : IdCronograma}, {Id: cronogramas[i].IdPlanEstudioMateria});
+            })
+        }
+
+        return res.json("Cronogramas generados correctamente");
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+          msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+
+export async function getCronogramaPorNombrePlan(req: Request,res: Response): Promise<Response> {
+    const nombrePlan = req.params.idPlan;
+    var result = [];
+
+    try {
+        const db = await getInstanceDB();
+
+        var [planEstudio] = await db.select<PlanEstudio>("PlanEstudio",{ Nombre: nombrePlan },{ limit: 1 });
+
+        var planEstudioMateria = await db.select<PlanEstudioMateria>("PlanEstudioMateria",{ IdPlan: planEstudio.Id });
+
+        for (let i = 0; i < planEstudioMateria.length; i++) {
+            var materia: Materia = { Id: 0, Descripcion: "" };
+            materia = await db.selectOne<Materia>("Materia", { Id: planEstudioMateria[i].IdMateria });
+      
+            var cronograma : Cronograma = await db.selectOne<Cronograma>("Cronograma", {
+              Id: planEstudioMateria[i].IdCronograma
+            });
+      
+            var turno =  mapTurno(cronograma.IdTurno);
+            var franjaHoraria = mapFranjaHoraria(cronograma.IdFranjaHoraria);
+      
+            result.push({
+              ...materia,
+              cuatrimestre: planEstudioMateria[i].Cuatrimestre,
+              planEstudioMateriaId: planEstudioMateria[i].Id,
+              turnoId: cronograma.IdTurno,
+              turno: turno,
+              franjaHorariaId: cronograma.IdFranjaHoraria,
+              franjaHoraria: franjaHoraria,
+              dia: cronograma.Dia
+            });
+        }
+
+        return res.json(result);
+          
+    } catch(error) {
+        console.log(error);
+        return res.status(500).json({
+          msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
 }

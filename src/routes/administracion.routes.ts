@@ -2,7 +2,7 @@ import { Router } from 'express'
 import validateToken from './validate_token';
 const router = Router();
 
-import { getAdministraciones, createInstanciaInscripcion, getInstanciaInscripcionActivas, getTipoInstanciaInscripciones, getCarreras, createCarrera, getPlanesEstudio, createPlanEstudio, getMaterias, createMateria, updateCarrera, getPlanesEstudioById, getPlanesEstudioByCarreraId, getMateriaById, updateMateria } from '../controllers/administracion.controller'
+import { getAdministraciones, createInstanciaInscripcion, getInstanciaInscripcionActivas, getTipoInstanciaInscripciones, getCarreras, createCarrera, getPlanesEstudio, createPlanEstudio, getMaterias, createMateria, updateCarrera, getPlanesEstudioById, getPlanesEstudioByCarreraId, getMateriaById, updateMateria, getTurnos, getFranjaHoraria, generarCronograma, getCronogramaPorNombrePlan } from '../controllers/administracion.controller'
 
 router.route('/')
     .get(validateToken,getAdministraciones);
@@ -38,5 +38,17 @@ router.route('/materia')
 
 router.route('/materia/:materiaId')
     .get(validateToken,getMateriaById);
+
+router.route('/turno')
+    .get(validateToken,getTurnos);
+
+router.route('/franjaHoraria')
+    .get(validateToken,getFranjaHoraria);
+
+router.route('/cronograma')
+    .post(validateToken,generarCronograma);
+
+router.route('/cronograma/:idPlan')
+    .get(validateToken,getCronogramaPorNombrePlan);
 
 export default router;

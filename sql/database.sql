@@ -129,6 +129,7 @@ CREATE TABLE PlanEstudioMateria(
     IdMateria INT(11) NOT NULL,
     IdPlan INT(11) NOT NULL,
     Cuatrimestre VARCHAR(100) NOT NULL,
+    IdCronograma INT(11) NOT NULL,
     CONSTRAINT FK_IdMateriaPlan FOREIGN KEY (IdMateria) REFERENCES Materia(Id),
     CONSTRAINT FK_IdPlanMateria FOREIGN KEY (IdPlan) REFERENCES PlanEstudio(Id)
 );
@@ -160,20 +161,12 @@ CREATE TABLE Cronograma(
     CONSTRAINT FK_IdFranjaHoraria FOREIGN KEY (IdFranjaHoraria) REFERENCES FranjaHoraria(Id)
 );
 
-CREATE TABLE MateriaCronograma(
-    Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    IdMateria INT(11) NOT NULL,
-    IdCronograma INT(11) NOT NULL,
-    CONSTRAINT FK_IdMateriaCronograma FOREIGN KEY (IdMateria) REFERENCES Materia(Id),
-    CONSTRAINT FK_IdCronogramaMateria FOREIGN KEY (IdCronograma) REFERENCES Cronograma(Id)
-);
-
 CREATE TABLE AlumnoMaterias(
     Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdAlumno INT(11) NOT NULL,
     IdMateria INT(11) NOT NULL,
     IdEstadoAcademico INT(11) NOT NULL DEFAULT 1,
-    IdMateriaCronograma INT(11) NOT NULL,
+    IdPlanEstudioMateria INT(11) NOT NULL,
     NotaPrimerParcial INT(11) NOT NULL,
     NotaSegundoParcial INT(11) NOT NULL,
     NotaRecuperatorioPrimerParcial INT(11) NOT NULL,
@@ -184,15 +177,15 @@ CREATE TABLE AlumnoMaterias(
     CONSTRAINT FK_IdAlumnoMateria FOREIGN KEY (IdAlumno) REFERENCES Usuarios(Id),
     CONSTRAINT FK_IdMateriaAlumno FOREIGN KEY (IdMateria) REFERENCES Materia(Id),
     CONSTRAINT FK_IdEstadoAcademicoAlumnoMaterias FOREIGN KEY (IdEstadoAcademico) REFERENCES EstadoAcademico(Id),
-    CONSTRAINT FK_IdMateriaCronogramaAlumno FOREIGN KEY (IdMateriaCronograma) REFERENCES MateriaCronograma(Id)
+    CONSTRAINT FK_IdPlanEstudioMateriaAlumno FOREIGN KEY (IdPlanEstudioMateria) REFERENCES PlanEstudioMateria(Id)
 );
 
 CREATE TABLE DocenteMaterias(
     Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdDocente INT(11) NOT NULL,
-    IdMateriaCronograma INT(11) NOT NULL,
+    IdPlanEstudioMateria INT(11) NOT NULL,
     CONSTRAINT FK_IdDocenteMaterias FOREIGN KEY (IdDocente) REFERENCES Usuarios(Id),
-    CONSTRAINT FK_IdMateriaCronogramaDocente FOREIGN KEY (IdMateriaCronograma) REFERENCES MateriaCronograma(Id)
+    CONSTRAINT FK_IdDocentePlanEstudioMateria FOREIGN KEY (IdPlanEstudioMateria) REFERENCES PlanEstudioMateria(Id)
 );
 
 CREATE TABLE ExamenFinal(

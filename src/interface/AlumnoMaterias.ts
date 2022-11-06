@@ -3,7 +3,7 @@ export default interface AlumnoMaterias{
     IdAlumno: number;
     IdMateria: number;
     IdEstadoAcademico: number;
-    IdMateriaCronograma: number;
+    IdPlanEstudioMateria: number;
     NotaPrimerParcial: number;
     NotaSegundoParcial: number;
     NotaRecuperatorioPrimerParcial: number;
