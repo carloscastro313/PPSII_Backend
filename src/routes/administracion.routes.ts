@@ -45,10 +45,4 @@ router.route('/turno')
 router.route('/franjaHoraria')
     .get(validateToken,getFranjaHoraria);
 
-router.route('/cronograma')
-    .post(validateToken,generarCronograma);
-
-router.route('/cronograma/:idPlan')
-    .get(validateToken,getCronogramaPorNombrePlan);
-
 export default router;
