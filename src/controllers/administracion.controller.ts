@@ -207,7 +207,7 @@ export async function createPlanEstudio(
 
       await t.update<PlanEstudio>(
         "PlanEstudio",
-        { ...newPlanEstudio },
+        { ...newPlanEstudio, FechaCreacion: now },
         { Id: idPlan }
       );
 
@@ -262,14 +262,21 @@ export async function getPlanesEstudioById(
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = req.params.idPlan;
+  const nombrePlan = req.params.idPlan;
   try {
     const db = await getInstanceDB();
 
-    var planEstudio = await db.select<PlanEstudio>("PlanEstudio", { Id: id });
+    var [planEstudio] = await db.select<PlanEstudio>(
+      "PlanEstudio",
+      {
+        Nombre: nombrePlan,
+      },
+      { limit: 1 }
+    );
+
     var planEstudioMateria = await db.select<PlanEstudioMateria>(
       "PlanEstudioMateria",
-      { IdPlan: id }
+      { IdPlan: planEstudio.Id }
     );
     var materias = [];
 
@@ -281,7 +288,7 @@ export async function getPlanesEstudioById(
 
       materias.push({
         ...materia,
-        Cuatrimestre: planEstudioMateria[i].Cuatrimestre,
+        cuatrimestre: planEstudioMateria[i].Cuatrimestre,
       });
     }
 
