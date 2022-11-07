@@ -14,6 +14,24 @@ export async function getAlumnos(req: Request, res: Response): Promise<Response>
     return res.json(alumnos);
 }
 
+export async function getAlumnosPorIdMateria(req: Request, res: Response): Promise<Response>{
+  //TO DO
+  const idMateria = req.params.idMateria;
+  try{
+    const db = await getInstanceDB();
+
+    const alumnos = await (await db.select<Usuario>("Usuarios",{TipoUsuario: TiposUsuario.Alumno}));
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+    msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+
+  return res.json();
+}
+
 export async function createAlumno(req: Request, res: Response) {
     const newUsuario = req.body.Alumno;
     const carreraId = req.body.CarreraId;

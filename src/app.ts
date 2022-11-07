@@ -9,6 +9,7 @@ import AlumnosRoutes from "./routes/alumno.routes";
 import DocentesRoutes from "./routes/docente.routes"; 
 import SecretariasRoutes from "./routes/secretaria.routes"; 
 import AdministracionesRoutes from "./routes/administracion.routes"; 
+import AvisosRoutes from "./routes/avisos.routes"; 
 
 export class App {
   private app: Application;
@@ -38,6 +39,7 @@ export class App {
     this.app.use("/docentes", DocentesRoutes);
     this.app.use("/secretarias", SecretariasRoutes);
     this.app.use("/administraciones", AdministracionesRoutes);
+    this.app.use("/avisos", AvisosRoutes);
   }
 
   async listen() {
