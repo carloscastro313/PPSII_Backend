@@ -18,15 +18,23 @@ import TipoInstanciaInscripcion from "../interface/TipoInstanciaInscripcion";
 import Turno from "../interface/Turno";
 import Usuario from "../interface/Usuario";
 
-export async function getAdministraciones(req: Request,res: Response): Promise<Response> {
+export async function getAdministraciones(
+  req: Request,
+  res: Response
+): Promise<Response> {
   const db = await getInstanceDB();
 
-  const administraciones = await db.select<Usuario>("Usuarios", {TipoUsuario: TiposUsuario.Administracion});
+  const administraciones = await db.select<Usuario>("Usuarios", {
+    TipoUsuario: TiposUsuario.Administracion,
+  });
 
   return res.json(administraciones);
 }
 
-export async function getInstanciaInscripcionActivas(req: Request,res: Response): Promise<Response> {
+export async function getInstanciaInscripcionActivas(
+  req: Request,
+  res: Response
+): Promise<Response> {
   try {
     const db = await getInstanceDB();
     const now = new Date();
@@ -50,11 +58,16 @@ export async function getInstanciaInscripcionActivas(req: Request,res: Response)
   }
 }
 
-export async function getTipoInstanciaInscripciones(req: Request,res: Response): Promise<Response> {
+export async function getTipoInstanciaInscripciones(
+  req: Request,
+  res: Response
+): Promise<Response> {
   try {
     const db = await getInstanceDB();
 
-    const tipoInstanciasInscripcion = await db.select<TipoInstanciaInscripcion>("TipoInstanciaInscripcion");
+    const tipoInstanciasInscripcion = await db.select<TipoInstanciaInscripcion>(
+      "TipoInstanciaInscripcion"
+    );
 
     return res.json(tipoInstanciasInscripcion);
   } catch (error) {
@@ -65,7 +78,10 @@ export async function getTipoInstanciaInscripciones(req: Request,res: Response):
   }
 }
 
-export async function createInstanciaInscripcion(req: Request,res: Response): Promise<Response> {
+export async function createInstanciaInscripcion(
+  req: Request,
+  res: Response
+): Promise<Response> {
   const newInstanciaInscripcion = req.body;
 
   try {
@@ -80,7 +96,10 @@ export async function createInstanciaInscripcion(req: Request,res: Response): Pr
 
     console.log(values);
 
-    const instanciaInscripciones = await db.query("SELECT * FROM InstanciaInscripcion WHERE FechaInicio <= ? AND FechaFinal >= ? AND IdTipo = ?",values);
+    const instanciaInscripciones = await db.query(
+      "SELECT * FROM InstanciaInscripcion WHERE FechaInicio <= ? AND FechaFinal >= ? AND IdTipo = ?",
+      values
+    );
 
     if (instanciaInscripciones.length != 0) {
       return res.status(400).json({
@@ -99,13 +118,19 @@ export async function createInstanciaInscripcion(req: Request,res: Response): Pr
   }
 }
 
-export async function createCarrera(req: Request,res: Response): Promise<Response> {
+export async function createCarrera(
+  req: Request,
+  res: Response
+): Promise<Response> {
   const newCarrera = req.body;
 
   try {
     const db = await getInstanceDB();
 
-    const carreras = await db.query("SELECT * FROM Carrera WHERE Descripcion = ?",newCarrera.Descripcion);
+    const carreras = await db.query(
+      "SELECT * FROM Carrera WHERE Descripcion = ?",
+      newCarrera.Descripcion
+    );
 
     if (carreras.length != 0) {
       return res.status(400).json({
@@ -124,13 +149,20 @@ export async function createCarrera(req: Request,res: Response): Promise<Respons
   }
 }
 
-export async function updateCarrera(req: Request,res: Response): Promise<Response> {
+export async function updateCarrera(
+  req: Request,
+  res: Response
+): Promise<Response> {
   const newCarrera = req.body;
 
   try {
     const db = await getInstanceDB();
 
-    await db.update<Carrera>("Carrera",{ ...newCarrera },{ Id: newCarrera.Id });
+    await db.update<Carrera>(
+      "Carrera",
+      { ...newCarrera },
+      { Id: newCarrera.Id }
+    );
 
     return res.json(newCarrera);
   } catch (error) {
@@ -141,7 +173,10 @@ export async function updateCarrera(req: Request,res: Response): Promise<Respons
   }
 }
 
-export async function getCarreras(req: Request,res: Response): Promise<Response> {
+export async function getCarreras(
+  req: Request,
+  res: Response
+): Promise<Response> {
   try {
     const db = await getInstanceDB();
     const carreras = await db.select<Carrera>("Carrera");
@@ -155,7 +190,10 @@ export async function getCarreras(req: Request,res: Response): Promise<Response>
   }
 }
 
-export async function createPlanEstudio(req: Request,res: Response): Promise<Response> {
+export async function createPlanEstudio(
+  req: Request,
+  res: Response
+): Promise<Response> {
   var newPlanEstudio = req.body.planEstudio;
   var materias = req.body.materias;
   var idPlan = 0;
@@ -174,33 +212,49 @@ export async function createPlanEstudio(req: Request,res: Response): Promise<Res
       anio = now.getFullYear();
       newPlanEstudio.Nombre = anio + "-" + idPlan;
 
-      await t.update<PlanEstudio>("PlanEstudio",{ ...newPlanEstudio, FechaCreacion: now },{ Id: idPlan });
+      await t.update<PlanEstudio>(
+        "PlanEstudio",
+        { ...newPlanEstudio, FechaCreacion: now },
+        { Id: idPlan }
+      );
 
-      await t.update<Carrera>("Carrera",{ PlanActual: newPlanEstudio.Nombre },{ Id: newPlanEstudio.IdCarrera });
+      await t.update<Carrera>(
+        "Carrera",
+        { PlanActual: newPlanEstudio.Nombre },
+        { Id: newPlanEstudio.IdCarrera }
+      );
 
       for (let i = 0; i < materias.length; i++) {
         var planEstudioMateria: PlanEstudioMateria = {
-            IdPlan: idPlan,
-            IdMateria: materias[i].IdMateria,
-            Cuatrimestre: materias[i].Cuatrimestre,
-            IdCronograma: 0
+          IdPlan: idPlan,
+          IdMateria: materias[i].IdMateria,
+          Cuatrimestre: materias[i].Cuatrimestre,
+          IdCronograma: 0,
         };
 
-        await t.insert<PlanEstudioMateria>("PlanEstudioMateria", {...planEstudioMateria});
+        await t.insert<PlanEstudioMateria>("PlanEstudioMateria", {
+          ...planEstudioMateria,
+        });
         var idPlanEstudioMateria = await t.getLastInsertId();
 
-        var cronograma : Cronograma = { IdFranjaHoraria: materias[i].IdFranjaHoraria, IdTurno: materias[i].IdTurno, Dia: materias[i].Dia };
+        var cronograma: Cronograma = {
+          IdFranjaHoraria: materias[i].IdFranjaHoraria,
+          IdTurno: materias[i].IdTurno,
+          Dia: materias[i].Dia,
+        };
         var IdCronograma = 0;
 
-        await t.insert<Cronograma>("Cronograma",{...cronograma});
+        await t.insert<Cronograma>("Cronograma", { ...cronograma });
         IdCronograma = await t.getLastInsertId();
-        await t.update<PlanEstudioMateria>("PlanEstudioMateria",{IdCronograma : IdCronograma}, {Id: idPlanEstudioMateria});
+        await t.update<PlanEstudioMateria>(
+          "PlanEstudioMateria",
+          { IdCronograma: IdCronograma },
+          { Id: idPlanEstudioMateria }
+        );
       }
-
     });
 
     return res.json(newPlanEstudio);
-
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -209,7 +263,10 @@ export async function createPlanEstudio(req: Request,res: Response): Promise<Res
   }
 }
 
-export async function getPlanesEstudio(req: Request,res: Response): Promise<Response> {
+export async function getPlanesEstudio(
+  req: Request,
+  res: Response
+): Promise<Response> {
   try {
     const db = await getInstanceDB();
 
@@ -224,36 +281,48 @@ export async function getPlanesEstudio(req: Request,res: Response): Promise<Resp
   }
 }
 
-export async function getPlanesEstudioById(req: Request,res: Response): Promise<Response> {
+export async function getPlanesEstudioById(
+  req: Request,
+  res: Response
+): Promise<Response> {
   const nombrePlan = req.params.idPlan;
   try {
     const db = await getInstanceDB();
 
-    var [planEstudio] = await db.select<PlanEstudio>("PlanEstudio",{ Nombre: nombrePlan },{ limit: 1 });
+    var [planEstudio] = await db.select<PlanEstudio>(
+      "PlanEstudio",
+      { Nombre: nombrePlan },
+      { limit: 1 }
+    );
 
-    var planEstudioMateria = await db.select<PlanEstudioMateria>("PlanEstudioMateria",{ IdPlan: planEstudio.Id });
+    var planEstudioMateria = await db.select<PlanEstudioMateria>(
+      "PlanEstudioMateria",
+      { IdPlan: planEstudio.Id }
+    );
     var materias = [];
 
     for (let i = 0; i < planEstudioMateria.length; i++) {
       var materia: Materia = { Id: 0, Descripcion: "" };
-      materia = await db.selectOne<Materia>("Materia", { Id: planEstudioMateria[i].IdMateria });
-
-      var cronograma : Cronograma = await db.selectOne<Cronograma>("Cronograma", {
-        Id: planEstudioMateria[i].IdCronograma
+      materia = await db.selectOne<Materia>("Materia", {
+        Id: planEstudioMateria[i].IdMateria,
       });
 
-      var turno =  mapTurno(cronograma.IdTurno);
+      var cronograma: Cronograma = await db.selectOne<Cronograma>(
+        "Cronograma",
+        {
+          Id: planEstudioMateria[i].IdCronograma,
+        }
+      );
+
+      var turno = mapTurno(cronograma.IdTurno);
       var franjaHoraria = mapFranjaHoraria(cronograma.IdFranjaHoraria);
 
       materias.push({
         ...materia,
         cuatrimestre: planEstudioMateria[i].Cuatrimestre,
-        planEstudioMateriaId: planEstudioMateria[i].Id,
-        turnoId: cronograma.IdTurno,
-        turno: turno,
-        franjaHorariaId: cronograma.IdFranjaHoraria,
-        franjaHoraria: franjaHoraria,
-        dia: cronograma.Dia
+        IdTurno: cronograma.IdTurno,
+        IdFranjaHoraria: cronograma.IdFranjaHoraria,
+        Dia: cronograma.Dia,
       });
     }
 
@@ -266,7 +335,10 @@ export async function getPlanesEstudioById(req: Request,res: Response): Promise<
   }
 }
 
-export async function getPlanesEstudioByCarreraId(req: Request,res: Response): Promise<Response> {
+export async function getPlanesEstudioByCarreraId(
+  req: Request,
+  res: Response
+): Promise<Response> {
   const idCarrera = req.params.CarreraId;
   try {
     const db = await getInstanceDB();
@@ -284,7 +356,10 @@ export async function getPlanesEstudioByCarreraId(req: Request,res: Response): P
   }
 }
 
-export async function createMateria(req: Request,res: Response): Promise<Response> {
+export async function createMateria(
+  req: Request,
+  res: Response
+): Promise<Response> {
   const newMateria = req.body.materia;
   const correlativas = req.body.correlativas;
 
@@ -293,7 +368,10 @@ export async function createMateria(req: Request,res: Response): Promise<Respons
   try {
     const db = await getInstanceDB();
 
-    const materias = await db.query("SELECT * FROM Materia WHERE Descripcion = ?",newMateria.Descripcion);
+    const materias = await db.query(
+      "SELECT * FROM Materia WHERE Descripcion = ?",
+      newMateria.Descripcion
+    );
 
     if (materias.length != 0) {
       return res.status(400).json({
@@ -323,14 +401,20 @@ export async function createMateria(req: Request,res: Response): Promise<Respons
   }
 }
 
-export async function updateMateria(req: Request,res: Response): Promise<Response> {
+export async function updateMateria(
+  req: Request,
+  res: Response
+): Promise<Response> {
   const newMateria = req.body.materia;
   const correlativas = req.body.correlativas;
 
   try {
     const db = await getInstanceDB();
 
-    const materias = await db.query("SELECT * FROM Materia WHERE Id = ?",newMateria.Id);
+    const materias = await db.query(
+      "SELECT * FROM Materia WHERE Id = ?",
+      newMateria.Id
+    );
 
     if (materias.length == 0) {
       return res.status(400).json({
@@ -339,7 +423,11 @@ export async function updateMateria(req: Request,res: Response): Promise<Respons
     }
 
     await db.transaction(async (t) => {
-      await t.update<Materia>("Materia",{ Descripcion: newMateria.Descripcion },{ Id: newMateria.Id });
+      await t.update<Materia>(
+        "Materia",
+        { Descripcion: newMateria.Descripcion },
+        { Id: newMateria.Id }
+      );
 
       await t.delete<Correlativa>("Correlativa", { IdMateria: newMateria.Id });
 
@@ -361,7 +449,10 @@ export async function updateMateria(req: Request,res: Response): Promise<Respons
   }
 }
 
-export async function getMaterias(req: Request,res: Response): Promise<Response> {
+export async function getMaterias(
+  req: Request,
+  res: Response
+): Promise<Response> {
   try {
     const db = await getInstanceDB();
 
@@ -376,7 +467,10 @@ export async function getMaterias(req: Request,res: Response): Promise<Response>
   }
 }
 
-export async function getMateriaById(req: Request,res: Response): Promise<Response> {
+export async function getMateriaById(
+  req: Request,
+  res: Response
+): Promise<Response> {
   const materiaId = req.params.materiaId;
 
   try {
@@ -406,34 +500,38 @@ export async function getMateriaById(req: Request,res: Response): Promise<Respon
   }
 }
 
-export async function getTurnos(req: Request,res: Response): Promise<Response> {
-    try {
-        const db = await getInstanceDB();
+export async function getTurnos(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const db = await getInstanceDB();
 
-        var turnos = await db.select<Turno>("Turno");
+    var turnos = await db.select<Turno>("Turno");
 
-        return res.json(turnos);
+    return res.json(turnos);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+}
 
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-          msg: errorMsg.ERROR_INESPERADO,
-        });
-    }
- }
+export async function getFranjaHoraria(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const db = await getInstanceDB();
 
- export async function getFranjaHoraria(req: Request,res: Response): Promise<Response> {
-    try {
-        const db = await getInstanceDB();
+    var franjasHorarias = await db.select<FranjaHoraria>("FranjaHoraria");
 
-        var franjasHorarias = await db.select<FranjaHoraria>("FranjaHoraria");
-
-        return res.json(franjasHorarias);
-
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-          msg: errorMsg.ERROR_INESPERADO,
-        });
-    }
- }
+    return res.json(franjasHorarias);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+}
