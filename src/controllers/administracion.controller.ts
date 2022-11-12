@@ -11,6 +11,7 @@ import Carrera from "../interface/Carrera";
 import Correlativa from "../interface/Correlativa";
 import Cronograma from "../interface/Cronograma";
 import FranjaHoraria from "../interface/FranjaHoraria";
+import MateriaDivision from "../interface/MateriaDivision";
 import Materia from "../interface/Materia";
 import PlanEstudio from "../interface/PlanEstudio";
 import PlanEstudioMateria from "../interface/PlanEstudioMateria";
@@ -228,33 +229,56 @@ export async function createPlanEstudio(
         var planEstudioMateria: PlanEstudioMateria = {
           IdPlan: idPlan,
           IdMateria: materias[i].IdMateria,
-          Cuatrimestre: materias[i].Cuatrimestre,
-          IdCronograma: 0,
+          Cuatrimestre: materias[i].Cuatrimestre
         };
 
         await t.insert<PlanEstudioMateria>("PlanEstudioMateria", {
           ...planEstudioMateria,
         });
-        var idPlanEstudioMateria = await t.getLastInsertId();
-
-        var cronograma: Cronograma = {
-          IdFranjaHoraria: materias[i].IdFranjaHoraria,
-          IdTurno: materias[i].IdTurno,
-          Dia: materias[i].Dia,
-        };
-        var IdCronograma = 0;
-
-        await t.insert<Cronograma>("Cronograma", { ...cronograma });
-        IdCronograma = await t.getLastInsertId();
-        await t.update<PlanEstudioMateria>(
-          "PlanEstudioMateria",
-          { IdCronograma: IdCronograma },
-          { Id: idPlanEstudioMateria }
-        );
       }
     });
 
     return res.json(newPlanEstudio);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+}
+
+export async function createMateriasDivision(
+  req: Request,
+  res: Response
+): Promise<Response> {
+
+  var materiasDivision = req.body.materiasDivision;
+
+  try {
+    const db = await getInstanceDB();
+
+    console.log(materiasDivision);
+
+    await db.transaction(async (t) => {
+
+      for (let i = 0; i < materiasDivision.length; i++) {
+        var cronograma : Cronograma = { IdFranjaHoraria: materiasDivision[i].IdFranjaHoraria, IdTurno: materiasDivision[i].IdTurno, Dia: materiasDivision[i].Dia }
+        
+        await t.insert<Cronograma>("Cronograma", {
+          ...cronograma,
+        });
+
+        var IdCronograma = await t.getLastInsertId();
+
+        var materiaDivision : MateriaDivision = { IdCronograma: IdCronograma, IdPlanEstudioMateria: materiasDivision[i].IdPlanEstudioMateria}
+
+        await t.insert<MateriaDivision>("MateriaDivision", {
+          ...materiaDivision,
+        });
+      }
+    });
+
+    return res.json({msg:"Divisiones de materias y cronogramas asignados correctamente"});
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -299,30 +323,100 @@ export async function getPlanesEstudioById(
       "PlanEstudioMateria",
       { IdPlan: planEstudio.Id }
     );
-    var materias = [];
 
+    console.log(planEstudioMateria);
+
+    var materiasDivision = [];
+    
     for (let i = 0; i < planEstudioMateria.length; i++) {
-      var materia: Materia = { Id: 0, Descripcion: "" };
-      materia = await db.selectOne<Materia>("Materia", {
-        Id: planEstudioMateria[i].IdMateria,
+
+      var materiaDiv = [];
+
+      materiaDiv = await db.select<MateriaDivision>("MateriaDivision", {
+        IdPlanEstudioMateria: planEstudioMateria[i].Id,
       });
 
-      var cronograma: Cronograma = await db.selectOne<Cronograma>(
-        "Cronograma",
+      console.log(materiaDiv);
+
+      var materia: Materia = await db.selectOne<Materia>(
+        "Materia",
         {
-          Id: planEstudioMateria[i].IdCronograma,
+          Id: planEstudioMateria[i].IdMateria,
         }
       );
 
-      var turno = mapTurno(cronograma.IdTurno);
-      var franjaHoraria = mapFranjaHoraria(cronograma.IdFranjaHoraria);
+      for(let i = 0; i < materiaDiv.length; i++){
+
+        var cronograma: Cronograma = await db.selectOne<Cronograma>(
+          "Cronograma",
+          {
+            Id: materiaDiv[i].IdCronograma,
+          }
+        );
+  
+        var turno = mapTurno(cronograma.IdTurno);
+        var franjaHoraria = mapFranjaHoraria(cronograma.IdFranjaHoraria);
+  
+        materiasDivision.push({
+          MateriaDivision: materiaDiv[i],
+          IdMateria: materia.Id,
+          IdPlanEstudioMateria: planEstudioMateria[i].Id,
+          Descripcion: materia.Descripcion,
+          Cuatrimestre: planEstudioMateria[i].Cuatrimestre,
+          IdCronograma: cronograma.Id,
+          Turno: turno,
+          IdTurno: cronograma.IdTurno,
+          FranjaHoraria: franjaHoraria,
+          IdFranjaHoraria: cronograma.IdFranjaHoraria,
+          Dia: cronograma.Dia,
+        });
+      }
+    }
+
+    return res.json({ planEstudio, materiasDivision });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+}
+
+export async function getPlanesEstudioByIdMaterias(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const nombrePlan = req.params.idPlan;
+  try {
+    const db = await getInstanceDB();
+
+    var [planEstudio] = await db.select<PlanEstudio>(
+      "PlanEstudio",
+      { Nombre: nombrePlan },
+      { limit: 1 }
+    );
+
+    var planEstudioMateria = await db.select<PlanEstudioMateria>(
+      "PlanEstudioMateria",
+      { IdPlan: planEstudio.Id }
+    );
+
+    var materias = [];
+    
+    for (let i = 0; i < planEstudioMateria.length; i++) {
+
+      var materia: Materia = await db.selectOne<Materia>(
+        "Materia",
+        {
+          Id: planEstudioMateria[i].IdMateria,
+        }
+      );
 
       materias.push({
         ...materia,
-        cuatrimestre: planEstudioMateria[i].Cuatrimestre,
-        IdTurno: cronograma.IdTurno,
-        IdFranjaHoraria: cronograma.IdFranjaHoraria,
-        Dia: cronograma.Dia,
+        IdPlanEstudioMateria: planEstudioMateria[i].Id,
+        Descripcion: materia.Descripcion,
+        Cuatrimestre: planEstudioMateria[i].Cuatrimestre
       });
     }
 
@@ -334,6 +428,7 @@ export async function getPlanesEstudioById(
     });
   }
 }
+
 
 export async function getPlanesEstudioByCarreraId(
   req: Request,

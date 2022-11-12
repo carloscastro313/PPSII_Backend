@@ -2,7 +2,7 @@ import { Router } from 'express'
 import validateToken from './validate_token';
 const router = Router();
 
-import { getAdministraciones, createInstanciaInscripcion, getInstanciaInscripcionActivas, getTipoInstanciaInscripciones, getCarreras, createCarrera, getPlanesEstudio, createPlanEstudio, getMaterias, createMateria, updateCarrera, getPlanesEstudioById, getPlanesEstudioByCarreraId, getMateriaById, updateMateria, getTurnos, getFranjaHoraria } from '../controllers/administracion.controller'
+import { getAdministraciones, createInstanciaInscripcion, getInstanciaInscripcionActivas, getTipoInstanciaInscripciones, getCarreras, createCarrera, getPlanesEstudio, createPlanEstudio, getMaterias, createMateria, updateCarrera, getPlanesEstudioById, getPlanesEstudioByCarreraId, getMateriaById, updateMateria, getTurnos, getFranjaHoraria, getPlanesEstudioByIdMaterias, createMateriasDivision } from '../controllers/administracion.controller'
 
 router.route('/')
     .get(validateToken,getAdministraciones);
@@ -25,9 +25,15 @@ router.route('/planEstudio')
     .get(validateToken,getPlanesEstudio)
     .post(validateToken,createPlanEstudio);
 
+router.route('/planEstudio/materiasDivision')
+    .post(validateToken,createMateriasDivision);
+
 router.route('/planEstudio/:idPlan')
     .get(validateToken,getPlanesEstudioById)
-    
+
+router.route('/planEstudio/materias/:idPlan')
+    .get(validateToken,getPlanesEstudioByIdMaterias);
+
 router.route('/planEstudio/carrera/:CarreraId')
     .get(validateToken,getPlanesEstudioByCarreraId);
 
