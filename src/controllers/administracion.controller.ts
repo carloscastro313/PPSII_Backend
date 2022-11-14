@@ -229,7 +229,7 @@ export async function createPlanEstudio(
         var planEstudioMateria: PlanEstudioMateria = {
           IdPlan: idPlan,
           IdMateria: materias[i].IdMateria,
-          Cuatrimestre: materias[i].Cuatrimestre
+          Cuatrimestre: materias[i].Cuatrimestre,
         };
 
         await t.insert<PlanEstudioMateria>("PlanEstudioMateria", {
@@ -251,7 +251,6 @@ export async function createMateriasDivision(
   req: Request,
   res: Response
 ): Promise<Response> {
-
   var materiasDivision = req.body.materiasDivision;
 
   try {
@@ -260,17 +259,23 @@ export async function createMateriasDivision(
     console.log(materiasDivision);
 
     await db.transaction(async (t) => {
-
       for (let i = 0; i < materiasDivision.length; i++) {
-        var cronograma : Cronograma = { IdFranjaHoraria: materiasDivision[i].IdFranjaHoraria, IdTurno: materiasDivision[i].IdTurno, Dia: materiasDivision[i].Dia }
-        
+        var cronograma: Cronograma = {
+          IdFranjaHoraria: materiasDivision[i].IdFranjaHoraria,
+          IdTurno: materiasDivision[i].IdTurno,
+          Dia: materiasDivision[i].Dia,
+        };
+
         await t.insert<Cronograma>("Cronograma", {
           ...cronograma,
         });
 
         var IdCronograma = await t.getLastInsertId();
 
-        var materiaDivision : MateriaDivision = { IdCronograma: IdCronograma, IdPlanEstudioMateria: materiasDivision[i].IdPlanEstudioMateria}
+        var materiaDivision: MateriaDivision = {
+          IdCronograma: IdCronograma,
+          IdPlanEstudioMateria: materiasDivision[i].IdPlanEstudioMateria,
+        };
 
         await t.insert<MateriaDivision>("MateriaDivision", {
           ...materiaDivision,
@@ -278,7 +283,9 @@ export async function createMateriasDivision(
       }
     });
 
-    return res.json({msg:"Divisiones de materias y cronogramas asignados correctamente"});
+    return res.json({
+      msg: "Divisiones de materias y cronogramas asignados correctamente",
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -327,9 +334,8 @@ export async function getPlanesEstudioById(
     console.log(planEstudioMateria);
 
     var materiasDivision = [];
-    
-    for (let i = 0; i < planEstudioMateria.length; i++) {
 
+    for (let i = 0; i < planEstudioMateria.length; i++) {
       var materiaDiv = [];
 
       materiaDiv = await db.select<MateriaDivision>("MateriaDivision", {
@@ -338,25 +344,21 @@ export async function getPlanesEstudioById(
 
       console.log(materiaDiv);
 
-      var materia: Materia = await db.selectOne<Materia>(
-        "Materia",
-        {
-          Id: planEstudioMateria[i].IdMateria,
-        }
-      );
+      var materia: Materia = await db.selectOne<Materia>("Materia", {
+        Id: planEstudioMateria[i].IdMateria,
+      });
 
-      for(let i = 0; i < materiaDiv.length; i++){
-
+      for (let i = 0; i < materiaDiv.length; i++) {
         var cronograma: Cronograma = await db.selectOne<Cronograma>(
           "Cronograma",
           {
             Id: materiaDiv[i].IdCronograma,
           }
         );
-  
+
         var turno = mapTurno(cronograma.IdTurno);
         var franjaHoraria = mapFranjaHoraria(cronograma.IdFranjaHoraria);
-  
+
         materiasDivision.push({
           MateriaDivision: materiaDiv[i],
           IdMateria: materia.Id,
@@ -402,21 +404,16 @@ export async function getPlanesEstudioByIdMaterias(
     );
 
     var materias = [];
-    
-    for (let i = 0; i < planEstudioMateria.length; i++) {
 
-      var materia: Materia = await db.selectOne<Materia>(
-        "Materia",
-        {
-          Id: planEstudioMateria[i].IdMateria,
-        }
-      );
+    for (let i = 0; i < planEstudioMateria.length; i++) {
+      var materia: Materia = await db.selectOne<Materia>("Materia", {
+        Id: planEstudioMateria[i].IdMateria,
+      });
 
       materias.push({
         ...materia,
         IdPlanEstudioMateria: planEstudioMateria[i].Id,
-        Descripcion: materia.Descripcion,
-        Cuatrimestre: planEstudioMateria[i].Cuatrimestre
+        cuatrimestre: planEstudioMateria[i].Cuatrimestre,
       });
     }
 
@@ -428,7 +425,6 @@ export async function getPlanesEstudioByIdMaterias(
     });
   }
 }
-
 
 export async function getPlanesEstudioByCarreraId(
   req: Request,
