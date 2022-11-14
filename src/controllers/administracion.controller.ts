@@ -285,13 +285,13 @@ export async function createMateriasDivision(
         });
       }
       //ACTUALIZACION DE CRONOGRAMAS MODIFICADOS
-      for(let i = 0; i < cronogramasModificados.length; i++) {
-        var cronogramaMod : Cronograma = { IdFranjaHoraria: cronogramasModificados[i].IdFranjaHoraria, IdTurno: cronogramasModificados[i].IdTurno, Dia: cronogramasModificados[i].Dia }
+      for(let j = 0; j < cronogramasModificados.length; j++) {
+        var cronogramaMod : Cronograma = { IdFranjaHoraria: cronogramasModificados[j].IdFranjaHoraria, IdTurno: cronogramasModificados[j].IdTurno, Dia: cronogramasModificados[j].Dia }
 
         await t.update<Cronograma>(
           "Cronograma",
           { IdFranjaHoraria: cronogramaMod.IdFranjaHoraria, IdTurno: cronogramaMod.IdTurno, Dia: cronogramaMod.Dia },
-          { Id: cronogramasModificados[i].Id }
+          { Id: cronogramasModificados[j].Id }
         );
       }
     });
@@ -361,11 +361,11 @@ export async function getPlanesEstudioById(
         Id: planEstudioMateria[i].IdMateria,
       });
 
-      for (let i = 0; i < materiaDiv.length; i++) {
+      for (let j = 0; j < materiaDiv.length; j++) {
         var cronograma: Cronograma = await db.selectOne<Cronograma>(
           "Cronograma",
           {
-            Id: materiaDiv[i].IdCronograma,
+            Id: materiaDiv[j].IdCronograma,
           }
         );
 
@@ -373,7 +373,7 @@ export async function getPlanesEstudioById(
         var franjaHoraria = mapFranjaHoraria(cronograma.IdFranjaHoraria);
 
         materiasDivision.push({
-          MateriaDivision: materiaDiv[i],
+          MateriaDivision: materiaDiv[j],
           IdMateria: materia.Id,
           IdPlanEstudioMateria: planEstudioMateria[i].Id,
           Descripcion: materia.Descripcion,
