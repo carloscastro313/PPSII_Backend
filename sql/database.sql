@@ -137,6 +137,7 @@ CREATE TABLE MateriaDivision(
     Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdPlanEstudioMateria INT(11) NOT NULL,
     IdCronograma INT(11) NOT NULL,
+    Division VARCHAR(10) NOT NULL,
 	CONSTRAINT FK_IdPlanEstudioMateriaDivision FOREIGN KEY (IdPlanEstudioMateria) REFERENCES PlanEstudioMateria(Id),
     CONSTRAINT FK_IdCronogramaMateriaDivision FOREIGN KEY (IdCronograma) REFERENCES Cronograma(Id)
 );

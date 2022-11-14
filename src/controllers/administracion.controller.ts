@@ -252,6 +252,7 @@ export async function createMateriasDivision(
   res: Response
 ): Promise<Response> {
   var materiasDivision = req.body.materiasDivision;
+  var cronogramasModificados = req.body.cronogramasModificados;
 
   try {
     const db = await getInstanceDB();
@@ -259,6 +260,7 @@ export async function createMateriasDivision(
     console.log(materiasDivision);
 
     await db.transaction(async (t) => {
+      //CREACION DE MATERIASDIVISION
       for (let i = 0; i < materiasDivision.length; i++) {
         var cronograma: Cronograma = {
           IdFranjaHoraria: materiasDivision[i].IdFranjaHoraria,
@@ -275,11 +277,22 @@ export async function createMateriasDivision(
         var materiaDivision: MateriaDivision = {
           IdCronograma: IdCronograma,
           IdPlanEstudioMateria: materiasDivision[i].IdPlanEstudioMateria,
+          Division: materiasDivision[i].Division
         };
 
         await t.insert<MateriaDivision>("MateriaDivision", {
           ...materiaDivision,
         });
+      }
+      //ACTUALIZACION DE CRONOGRAMAS MODIFICADOS
+      for(let i = 0; i < cronogramasModificados.length; i++) {
+        var cronogramaMod : Cronograma = { IdFranjaHoraria: cronogramasModificados[i].IdFranjaHoraria, IdTurno: cronogramasModificados[i].IdTurno, Dia: cronogramasModificados[i].Dia }
+
+        await t.update<Cronograma>(
+          "Cronograma",
+          { IdFranjaHoraria: cronogramaMod.IdFranjaHoraria, IdTurno: cronogramaMod.IdTurno, Dia: cronogramaMod.Dia },
+          { Id: cronogramasModificados[i].Id }
+        );
       }
     });
 
