@@ -190,9 +190,11 @@ export async function updateUsuario(req: Request, res: Response) {
   const id = req.params.UsuarioId;
   const newUsuario = req.body;
 
-  await bcrypt.hash(newUsuario.Contraseña, 10).then((hash) => {
-    newUsuario.Contraseña = hash;
-  });
+  if(newUsuario.Contraseña != null){
+    await bcrypt.hash(newUsuario.Contraseña, 10).then((hash) => {
+      newUsuario.Contraseña = hash;
+    });
+  }
 
   try {
     const db = await getInstanceDB();
