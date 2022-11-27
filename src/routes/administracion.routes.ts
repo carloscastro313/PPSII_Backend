@@ -52,6 +52,6 @@ router.route('/franjaHoraria')
     .get(validateToken,getFranjaHoraria);
 
 router.route('/docenteMaterias')
-    .get(validateToken,asignarDocenteAMateria);
+    .post(validateToken,asignarDocenteAMateria);
 
 export default router;

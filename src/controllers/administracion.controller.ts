@@ -648,14 +648,6 @@ export async function asignarDocenteAMateria(req: Request,res: Response): Promis
     var idDocente = req.body.idDocente;
     var idMateriaDivision = req.body.idMateriaDivision;
 
-    var docenteConMismaDivision = await db.select<DocenteMaterias>("DocenteMaterias",{IdMateriaDivision: idMateriaDivision});
-
-    if(docenteConMismaDivision != null){
-      return res.status(400).json({
-        msg: errorMsg.ERROR_DOCENTE_ASIGNADO_A_MATERIADIVISION
-      });
-    }
-
     var materiaDivisionActual = await db.selectOne<MateriaDivision>("MateriaDivision",{Id: idMateriaDivision});
     var cronogramaMateriaDivisionActual = await db.selectOne<Cronograma>("Cronograma",{Id: materiaDivisionActual.IdCronograma});
     var docenteMaterias = await db.select<DocenteMaterias>("DocenteMaterias",{IdDocente: idDocente});
@@ -675,6 +667,13 @@ export async function asignarDocenteAMateria(req: Request,res: Response): Promis
           msg: errorMsg.ERROR_DOCENTE_NO_DISPONIBLE_EN_CRONOGRAMA
         });
       }
+    }
+
+    var docenteConMismaDivision = await db.select<DocenteMaterias>("DocenteMaterias",{IdMateriaDivision: idMateriaDivision});
+    
+    //MODIFICAR DOCENTE DE MATERIA
+    if(docenteConMismaDivision.length != 0){
+      await db.delete<DocenteMaterias>("DocenteMaterias",{IdMateriaDivision: idMateriaDivision});
     }
 
     var newDocenteMateria : DocenteMaterias = { IdDocente : idDocente, IdMateriaDivision: idMateriaDivision}

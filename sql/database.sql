@@ -191,8 +191,7 @@ CREATE TABLE AlumnoMaterias(
 CREATE TABLE DocenteMaterias(
     Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdDocente INT(11) NOT NULL,
-    IdMateriaDivision INT(11) NOT NULL,
-    CONSTRAINT FK_IdDocenteMaterias FOREIGN KEY (IdDocente) REFERENCES Usuarios(Id),
+    IdMateriaDivision INT(11) NOT NULL
     CONSTRAINT FK_IdMateriaDivisionDocente FOREIGN KEY (IdMateriadivision) REFERENCES MateriaDivision(Id)
 );
 
