@@ -253,7 +253,6 @@ export async function createMateriasDivision(
 ): Promise<Response> {
   var materiasDivision = req.body.materiasDivision;
   var cronogramasModificados = req.body.cronogramasModificados;
-
   try {
     const db = await getInstanceDB();
 
@@ -277,7 +276,7 @@ export async function createMateriasDivision(
         var materiaDivision: MateriaDivision = {
           IdCronograma: IdCronograma,
           IdPlanEstudioMateria: materiasDivision[i].IdPlanEstudioMateria,
-          Division: materiasDivision[i].Division
+          Division: materiasDivision[i].Division,
         };
 
         await t.insert<MateriaDivision>("MateriaDivision", {
@@ -285,12 +284,20 @@ export async function createMateriasDivision(
         });
       }
       //ACTUALIZACION DE CRONOGRAMAS MODIFICADOS
-      for(let j = 0; j < cronogramasModificados.length; j++) {
-        var cronogramaMod : Cronograma = { IdFranjaHoraria: cronogramasModificados[j].IdFranjaHoraria, IdTurno: cronogramasModificados[j].IdTurno, Dia: cronogramasModificados[j].Dia }
+      for (let j = 0; j < cronogramasModificados.length; j++) {
+        var cronogramaMod: Cronograma = {
+          IdFranjaHoraria: cronogramasModificados[j].IdFranjaHoraria,
+          IdTurno: cronogramasModificados[j].IdTurno,
+          Dia: cronogramasModificados[j].Dia,
+        };
 
         await t.update<Cronograma>(
           "Cronograma",
-          { IdFranjaHoraria: cronogramaMod.IdFranjaHoraria, IdTurno: cronogramaMod.IdTurno, Dia: cronogramaMod.Dia },
+          {
+            IdFranjaHoraria: cronogramaMod.IdFranjaHoraria,
+            IdTurno: cronogramaMod.IdTurno,
+            Dia: cronogramaMod.Dia,
+          },
           { Id: cronogramasModificados[j].Id }
         );
       }
