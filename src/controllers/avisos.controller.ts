@@ -94,3 +94,22 @@ export async function traerAvisosNoLeidosPorUsuario(req: Request, res: Response)
     }
 }
 
+export async function traerTodosLosAvisosPorUsuario(req: Request, res: Response): Promise<Response>{
+    const idUsuario = req.params.idUsuario;
+
+    try{
+        const db = await getInstanceDB();
+
+        var avisos = await db.select<AvisoUsuarios>("AvisoUsuarios",{IdUsuario: idUsuario});
+
+        return res.json(avisos);
+    } catch (error) {
+
+        console.log(error);
+        
+        return res.status(500).json({
+        msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+

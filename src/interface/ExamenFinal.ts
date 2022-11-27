@@ -1,5 +1,6 @@
-export default interface EstadoAlumnoCarrera{
+export default interface ExamenFinal{
     Id?: number;
+    IdAlumno: number;
     IdDocenteMaterias: number;
     IdCronograma: number;
     IdDocente: number;

@@ -13,5 +13,8 @@ export const errorMsg = {
     ERROR_MATERIA_EXISTE: "La materia ya existe",
     ERROR_ALUMNO_EXISTE_EN_CARRERA: "El alumno ya tiene una cuenta para esa carrera",
     ERROR_LEGAJO_NO_EXISTE:"El legajo no existe",
-    ERROR_MATERIA_NO_EXISTE:"No existe una materia con ese Id"
+    ERROR_MATERIA_NO_EXISTE:"No existe una materia con ese Id",
+    ERROR_DOCENTE_NO_DISPONIBLE_EN_CRONOGRAMA:"El docente no esta disponible en ese horario",
+    ERROR_DOCENTE_ASIGNADO_A_MATERIADIVISION:"Ya hay asignado un docente para esta materia en esta division",
+    ERROR_NO_SE_PUEDE_MODIFICAR_NOTAS_ALUMNO:"El estado academico del alumno en la materia no permite modificar las notas",
   };
