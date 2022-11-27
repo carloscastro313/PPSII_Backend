@@ -2,6 +2,7 @@ export default interface AlumnoMaterias{
     Id?: number;
     IdAlumno: number;
     IdMateria: number;
+    IdMateriaDivision: number;
     IdEstadoAcademico: number;
     IdPlanEstudioMateria: number;
     NotaPrimerParcial: number;

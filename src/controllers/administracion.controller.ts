@@ -18,6 +18,7 @@ import PlanEstudioMateria from "../interface/PlanEstudioMateria";
 import TipoInstanciaInscripcion from "../interface/TipoInstanciaInscripcion";
 import Turno from "../interface/Turno";
 import Usuario from "../interface/Usuario";
+import DocenteMaterias from "../interface/DocenteMaterias";
 
 export async function getAdministraciones(
   req: Request,
@@ -633,6 +634,57 @@ export async function getFranjaHoraria(
 
     return res.json(franjasHorarias);
   } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+}
+
+export async function asignarDocenteAMateria(req: Request,res: Response): Promise<Response>{
+  try{
+    const db = await getInstanceDB();
+
+    var idDocente = req.body.idDocente;
+    var idMateriaDivision = req.body.idMateriaDivision;
+
+    var docenteConMismaDivision = await db.select<DocenteMaterias>("DocenteMaterias",{IdMateriaDivision: idMateriaDivision});
+
+    if(docenteConMismaDivision != null){
+      return res.status(400).json({
+        msg: errorMsg.ERROR_DOCENTE_ASIGNADO_A_MATERIADIVISION
+      });
+    }
+
+    var materiaDivisionActual = await db.selectOne<MateriaDivision>("MateriaDivision",{Id: idMateriaDivision});
+    var cronogramaMateriaDivisionActual = await db.selectOne<Cronograma>("Cronograma",{Id: materiaDivisionActual.IdCronograma});
+    var docenteMaterias = await db.select<DocenteMaterias>("DocenteMaterias",{IdDocente: idDocente});
+
+    for (let i = 0; i < docenteMaterias.length; i++) {
+
+      var materiasDivisionDocente = await db.selectOne<MateriaDivision>("MateriaDivision",{Id: docenteMaterias[i].IdMateriaDivision});
+      var cronogramaParaMateria = await db.selectOne<Cronograma>("Cronograma",{Id: materiasDivisionDocente.IdCronograma});
+
+      if(
+        cronogramaMateriaDivisionActual.Dia == cronogramaParaMateria.Dia &&
+        cronogramaMateriaDivisionActual.IdTurno == cronogramaParaMateria.IdTurno &&
+        cronogramaMateriaDivisionActual.IdFranjaHoraria == cronogramaParaMateria.IdFranjaHoraria
+      )
+      {
+        return res.json({
+          msg: errorMsg.ERROR_DOCENTE_NO_DISPONIBLE_EN_CRONOGRAMA
+        });
+      }
+    }
+
+    var newDocenteMateria : DocenteMaterias = { IdDocente : idDocente, IdMateriaDivision: idMateriaDivision}
+
+    await db.insert<DocenteMaterias>("DocenteMaterias",newDocenteMateria);
+
+    return res.json({
+      msg: "Docente asignado a la materia de la division correctamente"
+    });
+  }catch(error){
     console.log(error);
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,

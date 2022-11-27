@@ -7,6 +7,8 @@ import { errorMsg } from '../const/errors';
 import AlumnoCarrera from '../interface/AlumnoCarrera';
 import { EstadosAlumnoCarrera } from '../enums/estadosAlumnoCarrera';
 import { BindValue } from 'mysql2-extended';
+import AlumnoMaterias from '../interface/AlumnoMaterias';
+import { EstadosAlumnoMateria, mapEstadosAlumnoMateria } from '../enums/estadoAlumnoMateria';
 
 export async function getAlumnos(req: Request, res: Response): Promise<Response>{
     const db = await getInstanceDB();
@@ -15,21 +17,70 @@ export async function getAlumnos(req: Request, res: Response): Promise<Response>
 }
 
 export async function getAlumnosPorIdMateria(req: Request, res: Response): Promise<Response>{
-  //TO DO
+
   const idMateria = req.params.idMateria;
+  var alumnos = [];
+
   try{
     const db = await getInstanceDB();
 
-    const alumnos = await (await db.select<Usuario>("Usuarios",{TipoUsuario: TiposUsuario.Alumno}));
+    var alumnosMaterias = await db.select<AlumnoMaterias>("AlumnoMaterias",{IdMateria: idMateria});
+    
+    for (let i = 0; i < alumnosMaterias.length; i++) {
+      var alum = await db.selectOne<Usuario>("Usuario",{Id: alumnosMaterias[i].IdAlumno});
 
+      var estadoAcademico = mapEstadosAlumnoMateria(alumnosMaterias[i].IdEstadoAcademico);
+
+      alumnos.push({
+        IdAlumno: alum.Id,
+        Nombre: alum.Nombre,
+        Apellido: alum.Apellido,
+        DNI: alum.DNI,
+        IdEstadoAcademico: alumnosMaterias[i].IdEstadoAcademico,
+        EstadoAcademico: estadoAcademico
+      });
+    }
+
+    return res.json(alumnos);
   } catch (error) {
     console.log(error);
     return res.status(500).json({
     msg: errorMsg.ERROR_INESPERADO,
     });
   }
+}
 
-  return res.json();
+export async function getAlumnosPorIdMateriaDivision(req: Request, res: Response): Promise<Response>{
+
+  const idMateriaDivision = req.params.idMateriaDivision;
+  var alumnos = [];
+
+  try{
+    const db = await getInstanceDB();
+
+    var alumnosMaterias = await db.select<AlumnoMaterias>("AlumnoMaterias",{IdMateria: idMateriaDivision});
+    
+    for (let i = 0; i < alumnosMaterias.length; i++) {
+      var alum = await db.selectOne<Usuario>("Usuario",{Id: alumnosMaterias[i].IdAlumno});
+
+      var estadoAcademico = mapEstadosAlumnoMateria(alumnosMaterias[i].IdEstadoAcademico);
+
+      alumnos.push({
+        IdAlumno: alum.Id,
+        Nombre: alum.Nombre,
+        Apellido: alum.Apellido,
+        DNI: alum.DNI,
+        IdEstadoAcademico: alumnosMaterias[i].IdEstadoAcademico,
+        EstadoAcademico: estadoAcademico
+      });
+    }
+    return res.json(alumnos);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+    msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
 }
 
 export async function createAlumno(req: Request, res: Response) {
