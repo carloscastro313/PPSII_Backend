@@ -2,7 +2,7 @@ import { Router } from 'express'
 import validateToken from './validate_token';
 const router = Router();
 
-import { getAdministraciones, createInstanciaInscripcion, getInstanciaInscripcionActivas, getTipoInstanciaInscripciones, getCarreras, createCarrera, getPlanesEstudio, createPlanEstudio, getMaterias, createMateria, updateCarrera, getPlanesEstudioById, getPlanesEstudioByCarreraId, getMateriaById, updateMateria, getTurnos, getFranjaHoraria, getPlanesEstudioByIdMaterias, createMateriasDivision, asignarDocenteAMateria } from '../controllers/administracion.controller'
+import { getAdministraciones, createInstanciaInscripcion, getInstanciaInscripcionActivas, getTipoInstanciaInscripciones, getCarreras, createCarrera, getPlanesEstudio, createPlanEstudio, getMaterias, createMateria, updateCarrera, getPlanesEstudioById, getPlanesEstudioByCarreraId, getMateriaById, updateMateria, getTurnos, getFranjaHoraria, getPlanesEstudioByIdMaterias, createMateriasDivision, asignarDocenteAMateria, getCronogramaDocente, createInstanciaFinal } from '../controllers/administracion.controller'
 
 router.route('/')
     .get(validateToken,getAdministraciones);
@@ -37,6 +37,9 @@ router.route('/planEstudio/materias/:idPlan')
 router.route('/planEstudio/carrera/:CarreraId')
     .get(validateToken,getPlanesEstudioByCarreraId);
 
+    router.route('/planEstudio/cronograma/:idPlan')
+    .get(validateToken,getCronogramaDocente);
+
 router.route('/materia')
     .get(validateToken,getMaterias)
     .post(validateToken,createMateria)
@@ -53,5 +56,8 @@ router.route('/franjaHoraria')
 
 router.route('/docenteMaterias')
     .post(validateToken,asignarDocenteAMateria);
+
+router.route('/instanciaFinal')
+    .post(validateToken,createInstanciaFinal);
 
 export default router;

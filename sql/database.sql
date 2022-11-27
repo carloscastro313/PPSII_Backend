@@ -199,9 +199,7 @@ CREATE TABLE ExamenFinal(
     Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdDocenteMaterias INT(11) NOT NULL,
     IdCronograma INT(11) NOT NULL,
-    IdDocente INT(11) NOT NULL,
     Fecha DATETIME NOT NULL,
-    Nota INT(11) NOT NULL,
     CONSTRAINT FK_IdDocenteMateriasExamen FOREIGN KEY (IdDocenteMaterias) REFERENCES DocenteMaterias(Id),
     CONSTRAINT FK_IdCronogramaMateriaExamen FOREIGN KEY (IdCronograma) REFERENCES Cronograma(Id)
 );
@@ -210,6 +208,7 @@ CREATE TABLE ExamenFinalAlumno(
     Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdAlumnoMateria INT(11) NOT NULL,
     IdExamenFinal INT(11) NOT NULL,
+    Nota INT(11) NOT NULL,
     CONSTRAINT FK_IdAlumnoMateriaExamenFinal FOREIGN KEY (IdAlumnoMateria) REFERENCES AlumnoMaterias(Id),
     CONSTRAINT FK_IdExamenFinalAlumno FOREIGN KEY (IdExamenFinal) REFERENCES ExamenFinal(Id)
 );

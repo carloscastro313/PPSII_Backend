@@ -112,4 +112,3 @@ export async function traerTodosLosAvisosPorUsuario(req: Request, res: Response)
         });
     }
 }
-

@@ -12,6 +12,7 @@ export const generarJWT = (id: string) =>
   );
 
 export const getTokenId = (token: string) => {
+  console.log(token);
   token = token.slice(7);
   return jwt.decode(token) as JwtPayload;
 };

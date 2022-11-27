@@ -2,7 +2,7 @@ import { Router } from 'express'
 import validateToken from './validate_token';
 const router = Router();
 
-import { createAlumno, getAlumnos, getAlumnosPorIdMateria, getAlumnosPorIdMateriaDivision } from '../controllers/alumno.controller'
+import { createAlumno, getAlumnos, getAlumnosPorIdMateria, getAlumnosPorIdMateriaDivision, getInscripcionMateria } from '../controllers/alumno.controller'
 
 router.route('/')
     .get(validateToken,getAlumnos)
@@ -13,5 +13,8 @@ router.route('/getAlumnosPorIdMateria/:idMateria')
 
 router.route('/getAlumnosPorIdMateriaDivision/:idMateriaDivision')
     .get(validateToken,getAlumnosPorIdMateriaDivision);
+
+router.route("/getInscripcionMateria/:CarreraId")
+        .get(validateToken,getInscripcionMateria);
     
 export default router;

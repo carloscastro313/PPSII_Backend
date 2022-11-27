@@ -10,7 +10,7 @@ router.route('/')
 router.route('/materiasDivision/:idUsuario')
     .get(validateToken,getMateriasDivisionDocente);
 
-router.route('/agregarNotaAAlumno')
+router.route('/agregarNotasAAlumno')
     .post(validateToken,agregarNotasAAlumno);
 
 router.route('/agregarNotaFinalAAlumno')

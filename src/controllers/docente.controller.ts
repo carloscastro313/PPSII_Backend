@@ -94,7 +94,7 @@ export async function agregarNotasAAlumno(req: Request, res: Response): Promise<
         }
 
         alumnoMateria.NotaPrimerParcial = notas.PrimerParcial;
-        alumnoMateria.NotaSegundoParcial = notas.PrimerParcial;
+        alumnoMateria.NotaSegundoParcial = notas.SegundoParcial;
         alumnoMateria.NotaRecuperatorioPrimerParcial = notas.RecuperatorioPrimerParcial;
         alumnoMateria.NotaRecuperatorioSegundoParcial = notas.RecuperatorioSegundoParcial;
         alumnoMateria.NotaRecuperatorioPrimerParcial2 = notas.RecuperatorioPrimerParcial2;
@@ -138,7 +138,6 @@ export async function agregarNotaFinalAAlumno(req: Request, res: Response): Prom
         });
     }
 }
-
 
 function estadoAlumnoMateriaSegunNotas(alumnoMateria:AlumnoMaterias) : number{
     var response = 0;

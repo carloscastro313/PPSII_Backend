@@ -3,7 +3,7 @@ import { BindValue } from "mysql2-extended";
 import { ListFormat } from "typescript";
 import { errorMsg } from "../const/errors";
 import getInstanceDB from "../database";
-import { mapFranjaHoraria } from "../enums/franjaHoraria";
+import { FranjasHorarias, mapFranjaHoraria } from "../enums/franjaHoraria";
 import { TiposUsuario } from "../enums/tiposUsuario";
 import { mapTurno, Turnos } from "../enums/turnos";
 import List from "../helpers/list";
@@ -19,6 +19,8 @@ import TipoInstanciaInscripcion from "../interface/TipoInstanciaInscripcion";
 import Turno from "../interface/Turno";
 import Usuario from "../interface/Usuario";
 import DocenteMaterias from "../interface/DocenteMaterias";
+import ExamenFinal from "../interface/ExamenFinal";
+import InstanciaInscripcion from "../interface/InstanciaInscripcion";
 
 export async function getAdministraciones(
   req: Request,
@@ -664,13 +666,9 @@ export async function asignarDocenteAMateria(req: Request,res: Response): Promis
       var materiasDivisionDocente = await db.selectOne<MateriaDivision>("MateriaDivision",{Id: docenteMaterias[i].IdMateriaDivision});
       var cronogramaParaMateria = await db.selectOne<Cronograma>("Cronograma",{Id: materiasDivisionDocente.IdCronograma});
 
-      if(
-        cronogramaMateriaDivisionActual.Dia == cronogramaParaMateria.Dia &&
-        cronogramaMateriaDivisionActual.IdTurno == cronogramaParaMateria.IdTurno &&
-        cronogramaMateriaDivisionActual.IdFranjaHoraria == cronogramaParaMateria.IdFranjaHoraria
-      )
+      if(!franjaHorariaValida(cronogramaMateriaDivisionActual, cronogramaParaMateria))
       {
-        return res.json({
+        return res.status(400).json({
           msg: errorMsg.ERROR_DOCENTE_NO_DISPONIBLE_EN_CRONOGRAMA
         });
       }
@@ -696,4 +694,182 @@ export async function asignarDocenteAMateria(req: Request,res: Response): Promis
       msg: errorMsg.ERROR_INESPERADO,
     });
   }
+}
+
+function franjaHorariaValida(cronogramaActual : Cronograma, cronogramaDocente : Cronograma){
+
+  if(cronogramaActual.Dia != cronogramaDocente.Dia || cronogramaActual.IdTurno != cronogramaDocente.IdTurno)
+    return true;
+
+  if(cronogramaActual.IdFranjaHoraria == FranjasHorarias.BloqueCompleto || cronogramaDocente.IdFranjaHoraria == FranjasHorarias.BloqueCompleto ||  cronogramaActual.IdFranjaHoraria == cronogramaDocente.IdFranjaHoraria)
+    return false;
+
+  return true;
+}
+
+
+export async function getCronogramaDocente(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const nombrePlan = req.params.idPlan;
+  try {
+    const db = await getInstanceDB();
+
+    var [planEstudio] = await db.select<PlanEstudio>(
+      "PlanEstudio",
+      { Nombre: nombrePlan },
+      { limit: 1 }
+    );
+
+    var planEstudioMateria = await db.select<PlanEstudioMateria>(
+      "PlanEstudioMateria",
+      { IdPlan: planEstudio.Id }
+    );
+
+    console.log(planEstudioMateria);
+
+    var materiasDivision = [];
+
+    for (let i = 0; i < planEstudioMateria.length; i++) {
+      var materiaDiv = [];
+
+      materiaDiv = await db.select<MateriaDivision>("MateriaDivision", {
+        IdPlanEstudioMateria: planEstudioMateria[i].Id,
+      });
+
+      console.log(materiaDiv);
+
+      var materia: Materia = await db.selectOne<Materia>("Materia", {
+        Id: planEstudioMateria[i].IdMateria,
+      });
+
+      for (let j = 0; j < materiaDiv.length; j++) {
+        var cronograma: Cronograma = await db.selectOne<Cronograma>(
+          "Cronograma",
+          {
+            Id: materiaDiv[j].IdCronograma,
+          }
+        );
+          var Docente = null;
+        const id = materiaDiv[j].Id || -1;
+        
+        var resultDocente = await db.query("select * from DocenteMaterias dm inner join usuarios u on u.Id = dm.IdDocente where dm.IdMateriaDivision = ? limit 1",[id]);
+
+        if(resultDocente.length > 0)
+          Docente = resultDocente[0];
+
+        var turno = mapTurno(cronograma.IdTurno);
+        var franjaHoraria = mapFranjaHoraria(cronograma.IdFranjaHoraria);
+
+        materiasDivision.push({
+          MateriaDivision: materiaDiv[j],
+          IdMateria: materia.Id,
+          IdPlanEstudioMateria: planEstudioMateria[i].Id,
+          Descripcion: materia.Descripcion,
+          Cuatrimestre: planEstudioMateria[i].Cuatrimestre,
+          IdCronograma: cronograma.Id,
+          Turno: turno,
+          IdTurno: cronograma.IdTurno,
+          FranjaHoraria: franjaHoraria,
+          IdFranjaHoraria: cronograma.IdFranjaHoraria,
+          Dia: cronograma.Dia,
+          Docente
+        });
+      }
+    }
+
+    return res.json({ planEstudio, materiasDivision });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+}
+
+
+export async function createInstanciaFinal(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const newInstanciaInscripcion = req.body.newInstanciaInscripcion;
+  const fechaInicioPrimera = req.body.primeraSemana;
+  const fechaInicioSegunda = req.body.segundaSemana;
+
+  const weekday = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+  try {
+    const db = await getInstanceDB();
+
+    const now = new Date();
+
+    const instanciaInscripciones = await db.query(
+      "SELECT * FROM InstanciaInscripcion WHERE FechaInicio <= ? AND FechaFinal >= ? AND IdTipo = ?",
+      [now.toISOString(),now.toISOString(),newInstanciaInscripcion.IdTipo.toString()]
+    );
+
+    if (instanciaInscripciones.length != 0) {
+      return res.status(400).json({
+        msg: errorMsg.ERROR_INSTANCIA_ACTIVA,
+      });
+    }
+
+    await db.insert("InstanciaInscripcion", { ...newInstanciaInscripcion });
+
+    const divisionDocente = await db.query("select cr.Id as IdCronograma, dm.Id as IdDocenteMaterias, cr.Dia as Dia from MateriaDivision md inner join DocenteMaterias dm on md.Id = dm.IdMateriaDivision inner join Cronograma cr on cr.Id = md.IdCronograma");
+
+    const fecha1 = new Date(fechaInicioPrimera);
+    const fecha2 = new Date(fechaInicioSegunda);
+
+    const primeraSemana = getFechas(fecha1);
+    const segundaSemana = getFechas(fecha2);
+
+    let finales: any[]= [];
+
+    finales = [...finales, generarExamenFinal(divisionDocente, primeraSemana)];
+    finales = [...finales, generarExamenFinal(divisionDocente, segundaSemana)];
+
+    for (let i = 0; i < finales.length; i++) {
+      await db.insert<ExamenFinal>("ExamenFinal",finales[i]);
+    }
+
+    return res.json({newInstanciaInscripcion, finales});
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+}
+
+
+function getFechas(fecha: Date){
+  const fechas = [];
+  const weekday = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  
+  for (let i = 0; i < 7; i++) {
+    const aux = new Date(fecha);
+    aux.setDate(aux.getDate() + i);
+
+    if(weekday[aux.getUTCDay()] != "Sunday")
+      fechas.push(aux)
+  }
+
+  return fechas;
+}
+
+function generarExamenFinal(divisiones: any[], arrFecha: Date[]){
+  let arr: any[] = [];
+  const weekday = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
+
+  for (let i = 0; i < arrFecha.length; i++) {
+    let strAux = weekday[arrFecha[i].getUTCDay()];
+    
+    const arrDivisiones = divisiones.filter((value : any) => value.Dia === strAux);
+
+    arr = [...arr, ...arrDivisiones.map((value: any) =>{ return {IdCronograma: value.IdCronograma, IdDocenteMaterias: value.IdDocenteMaterias, Fecha: `${arrFecha[i].getUTCFullYear()}-${arrFecha[i].getUTCMonth()}-${arrFecha[i].getUTCDate()} 00:00:00.000`}})]
+  }
+
+  return arr;
 }
