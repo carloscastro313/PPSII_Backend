@@ -1,9 +1,13 @@
 import { Request, Response } from 'express'
 import { errorMsg } from '../const/errors';
 import getInstanceDB  from '../database'
+import { EstadosAlumnoMateria } from '../enums/estadoAlumnoMateria';
 import { TiposUsuario } from '../enums/tiposUsuario';
+import AlumnoMaterias from '../interface/AlumnoMaterias';
 import Avisos from '../interface/Avisos';
 import AvisoUsuarios from '../interface/AvisoUsuarios';
+import MateriaDivision from '../interface/MateriaDivision';
+import Usuario from '../interface/Usuario';
 
 export async function getAvisos(req: Request, res: Response): Promise<Response>{
     try{
@@ -107,6 +111,104 @@ export async function traerTodosLosAvisosPorUsuario(req: Request, res: Response)
 
         console.log(error);
         
+        return res.status(500).json({
+        msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+
+export async function traerGruposDePersonas(req: Request, res: Response): Promise<Response>{
+    var response = [];
+    try{
+        const db = await getInstanceDB();
+
+        var administraciones = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Administracion});
+        var secretarias = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Secretaria});
+        var docentes = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Docente});
+        var alumnos = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Alumno});
+
+        console.log("secretarias");
+        console.log(secretarias);
+
+        var adminIds = administraciones.map(({ Id }) => Id as number);
+        var secretariasIds = secretarias.map(({ Id }) => Id as number);
+        var docentesIds = docentes.map(({ Id }) => Id as number);
+        var todosLosAlumnosIds = alumnos.map(({ Id }) => Id as number);
+
+        response.push({
+            Administracion: adminIds,
+            Secretaria: secretariasIds,
+            Docentes: docentesIds,
+            TodosLosAlumnos: todosLosAlumnosIds,
+        })
+
+        console.log(response);
+
+        var materiaDivision = await db.select<MateriaDivision>("MateriaDivision");
+
+        // for(let i = 0; i < materiaDivision.length; i++){
+        //     var alumnosPorDivision = await db.select<AlumnoMaterias>("AlumnoMaterias",{IdMateriaDivision: materiaDivision[i].Id});
+        //     var division = materiaDivision[i].Division;
+            
+        //     response.push({
+        //         Division: division,
+        //         AlumnosDivisionId: alumnosPorDivision[i].Id
+        //     });
+        // }
+
+        return res.json(response);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+        msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+
+export async function getGruposDePersonas(req: Request, res: Response){
+    var response = [];
+    console.log("secretarias");
+    
+    try{
+        const db = await getInstanceDB();
+
+        var administraciones = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Administracion});
+        var secretarias = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Secretaria});
+        var docentes = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Docente});
+        var alumnos = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Alumno});
+
+        console.log("secretarias");
+        console.log(secretarias);
+
+        var adminIds = administraciones.map(({ Id }) => Id as number);
+        var secretariasIds = secretarias.map(({ Id }) => Id as number);
+        var docentesIds = docentes.map(({ Id }) => Id as number);
+        var todosLosAlumnosIds = alumnos.map(({ Id }) => Id as number);
+
+        response.push({
+            Administracion: adminIds,
+            Secretaria: secretariasIds,
+            Docentes: docentesIds,
+            TodosLosAlumnos: todosLosAlumnosIds,
+        })
+
+        console.log(response);
+
+        var materiaDivision = await db.select<MateriaDivision>("MateriaDivision");
+
+        // for(let i = 0; i < materiaDivision.length; i++){
+        //     var alumnosPorDivision = await db.select<AlumnoMaterias>("AlumnoMaterias",{IdMateriaDivision: materiaDivision[i].Id});
+        //     var division = materiaDivision[i].Division;
+            
+        //     response.push({
+        //         Division: division,
+        //         AlumnosDivisionId: alumnosPorDivision[i].Id
+        //     });
+        // }
+
+        return res.json(response);
+    } catch (error) {
+        console.log(error);
         return res.status(500).json({
         msg: errorMsg.ERROR_INESPERADO,
         });

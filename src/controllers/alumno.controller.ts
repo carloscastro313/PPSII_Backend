@@ -497,3 +497,45 @@ const getNoche = (IdFranjaHoraria: number) => {
       break;
   }
 };
+
+
+export async function getNotasMaterias(req: Request, res: Response) {
+
+  const bearerToken = req.header("authorization") as string;
+  const { id } = getTokenId(bearerToken);
+  var materiasConNotas = [];
+
+  try{
+    const db = await getInstanceDB();
+
+    var alumnoMaterias = await db.select<AlumnoMaterias>("AlumnoMaterias",{IdAlumno: id});
+
+    for (let i = 0; i < alumnoMaterias.length; i++) {
+      var materia = await db.selectOne<Materia>("Materia",{Id: alumnoMaterias[i].IdMateria});
+      
+      var estadoAcademico = mapEstadosAlumnoMateria(alumnoMaterias[i].IdEstadoAcademico);
+
+      if(alumnoMaterias[i].IdEstadoAcademico != EstadosAlumnoMateria.MateriaDesaprobada){
+        materiasConNotas.push({
+          IdMateria: materia.Id,
+          Nombre: materia.Descripcion,
+          NotaPrimerParcial: alumnoMaterias[i].NotaPrimerParcial,
+          NotaSegundoParcial: alumnoMaterias[i].NotaSegundoParcial,
+          NotaRecuperatorioPrimerParcial: alumnoMaterias[i].NotaRecuperatorioPrimerParcial,
+          NotaRecuperatorioSegundoParcial: alumnoMaterias[i].NotaRecuperatorioSegundoParcial,
+          NotaRecuperatorioPrimerParcial2: alumnoMaterias[i].NotaRecuperatorioPrimerParcial2,
+          NotaRecuperatorioSegundoParcial2: alumnoMaterias[i].NotaRecuperatorioSegundoParcial2,
+          NotaFinal: alumnoMaterias[i].NotaFinal,
+          EstadoAcademico: estadoAcademico
+        });
+      }
+    }
+
+    return res.json(materiasConNotas);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+}

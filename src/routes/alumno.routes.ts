@@ -11,6 +11,7 @@ import {
   getExamenesAnotados,
   getInscripcionMateria,
   getMateriasPlan,
+  getNotasMaterias,
   inscribirAlumnoMateria,
 } from "../controllers/alumno.controller";
 
@@ -40,5 +41,7 @@ router.route("/getMateriasPlan").get(validateToken, getMateriasPlan);
 router.route("/getEstadoAcademido").get(validateToken, getEstadoAcademico);
 
 router.route("/getExamenesAnotados").get(validateToken, getExamenesAnotados);
+
+router.route("/getNotasMaterias").get(validateToken, getNotasMaterias);
 
 export default router;

@@ -2,7 +2,7 @@ import { Router } from 'express'
 import validateToken from './validate_token';
 const router = Router();
 
-import { createAviso, getAvisoById, getAvisos, traerAvisosNoLeidosPorUsuario, traerTodosLosAvisosPorUsuario } from '../controllers/avisos.controller'
+import { createAviso, getAvisoById, getAvisos, getGruposDePersonas, traerAvisosNoLeidosPorUsuario, traerGruposDePersonas, traerTodosLosAvisosPorUsuario } from '../controllers/avisos.controller'
 
 router.route('/')
     .get(validateToken, getAvisos)
@@ -16,5 +16,12 @@ router.route('/noLeidos/:idUsuario')
 
 router.route('/todosLosAvisos/:idUsuario')
     .get(validateToken,traerTodosLosAvisosPorUsuario);
+
+router.route('/traerGruposDePersonas')
+    .get(validateToken,traerGruposDePersonas);
+
+router.route('/getGruposDePersonas')
+    .get(validateToken,getGruposDePersonas);
+
 
 export default router;
