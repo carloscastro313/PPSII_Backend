@@ -4,11 +4,13 @@ const router = Router();
 
 import {
   createAlumno,
+  createExamenFinalAlumno,
   getAlumnos,
   getAlumnosPorIdMateria,
   getAlumnosPorIdMateriaDivision,
   getEstadoAcademico,
   getExamenesAnotados,
+  getFinalesDisponible,
   getInscripcionMateria,
   getMateriasPlan,
   inscribirAlumnoMateria,
@@ -40,5 +42,11 @@ router.route("/getMateriasPlan").get(validateToken, getMateriasPlan);
 router.route("/getEstadoAcademido").get(validateToken, getEstadoAcademico);
 
 router.route("/getExamenesAnotados").get(validateToken, getExamenesAnotados);
+
+router.route("/getFinalesDisponible").get(validateToken, getFinalesDisponible);
+
+router
+  .route("/createExamenFinalAlumno")
+  .post(validateToken, createExamenFinalAlumno);
 
 export default router;
