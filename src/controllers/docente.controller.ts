@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import e, { Request, Response } from 'express'
 import { body } from 'express-validator';
 import { MySQL2Extended } from 'mysql2-extended';
 import { errorMsg } from '../const/errors';
@@ -8,10 +8,12 @@ import { EstadosAlumnoCarrera } from '../enums/estadosAlumnoCarrera';
 import { mapFranjaHoraria } from '../enums/franjaHoraria';
 import { TiposUsuario } from '../enums/tiposUsuario';
 import { mapTurno } from '../enums/turnos';
+import { getTokenId } from '../helpers/jwt';
 import AlumnoMaterias from '../interface/AlumnoMaterias';
 import Cronograma from '../interface/Cronograma';
 import DocenteMaterias from '../interface/DocenteMaterias';
 import ExamenFinal from '../interface/ExamenFinal';
+import ExamenFinalAlumno from '../interface/ExamenFinalAlumno';
 import Materia from '../interface/Materia';
 import MateriaDivision from '../interface/MateriaDivision';
 import PlanEstudioMateria from '../interface/PlanEstudioMateria';
@@ -54,6 +56,7 @@ export async function getMateriasDivisionDocente(req: Request, res: Response): P
 
             materiasDivision.push({
                 IdMateria: materia.Id,
+                IdMateriaDivision: materiaDivision.Id,
                 Materia: materia.Descripcion,
                 Cuatrimestre: planEstudioMateria.Cuatrimestre,
                 Division: materiaDivision.Division,
@@ -72,6 +75,42 @@ export async function getMateriasDivisionDocente(req: Request, res: Response): P
         });
     }
 }
+
+export async function getAlumnosPorIdMateriaDivision(req: Request, res: Response): Promise<Response>{
+    const idMateriaDivision = req.params.idMateriaDivision;
+    var alumnos = [];
+
+    try{
+        const db = await getInstanceDB();
+
+        var materiaDivision = await db.selectOne<MateriaDivision>("MateriaDivision",{Id: idMateriaDivision});
+        var alumnosMateriaDivision = await db.select<AlumnoMaterias>("AlumnoMaterias", {IdMateriaDivision: materiaDivision.Id});
+
+        for (let i = 0; i < alumnosMateriaDivision.length; i++) {
+
+            if(alumnosMateriaDivision[i].IdEstadoAcademico == EstadosAlumnoMateria.CursadaRegular){
+
+                var alumnoActual = await db.selectOne<Usuario>("Usuario",{Id: alumnosMateriaDivision[i].IdAlumno});
+                
+                alumnos.push({
+                    Nombre: alumnoActual.Nombre,
+                    Apellido: alumnoActual.Apellido,
+                    Mail: alumnoActual.Mail,
+                    DNI: alumnoActual.DNI,
+                    AlumnoMateriaDivision: alumnosMateriaDivision[i]
+                });
+            }
+        }
+
+        return res.json(alumnos);
+    }catch(error){
+        console.log(error);
+        return res.status(500).json({
+          msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+
 
 export async function agregarNotasAAlumno(req: Request, res: Response): Promise<Response>{
 
@@ -122,15 +161,35 @@ export async function agregarNotasAAlumno(req: Request, res: Response): Promise<
 
 export async function agregarNotaFinalAAlumno(req: Request, res: Response): Promise<Response>{
 
-    var idExamenFinal = req.body.idAlumnoMateria;
+    var idExamenFinalAlumno = req.body.idExamenFinalAlumno;
+    var idAlumnoMateria = req.body.idAlumnoMateria;
     var nota = req.body.nota;
+    var date = new Date();
 
     try{
         const db = await getInstanceDB();
 
-        // TO DO (REPLANTEAR FINALES)
+        var examenFinalAlumno = await db.selectOne<ExamenFinalAlumno>("ExamenFinalAlumno",{Id: idExamenFinalAlumno});
+        var examenFinal = await db.selectOne<ExamenFinal>("ExamenFinal",{Id: examenFinalAlumno.IdExamenFinal});
 
-        return res.json("Nota final actualizada correctamente");
+        if(
+            date.getUTCFullYear() === examenFinal.Fecha.getUTCFullYear() &&
+            date.getUTCMonth() === examenFinal.Fecha.getUTCMonth() &&
+            date.getUTCDate() === examenFinal.Fecha.getUTCDate()
+        ){
+            await db.update<ExamenFinalAlumno>("ExamenFinalAlumno",{Nota: nota},{Id: idExamenFinalAlumno});
+            if(nota >= 4){
+                await db.update<AlumnoMaterias>("AlumnoMateria",{IdEstadoAcademico: EstadosAlumnoMateria.MateriaAprobada},{Id: idAlumnoMateria});
+            }
+        }else{
+            return res.status(400).json({
+                msg: errorMsg.ERROR_DOCENTE_YA_NO_PUEDE_CALIFICAR_FINAL,
+              });
+        }
+
+        return res.json({
+            msg: "Nota de final actualizada correctamente"
+        });
     }catch(error){
         console.log(error);
         return res.status(500).json({
@@ -219,4 +278,41 @@ function notaFinalAlumnoMateriaSegunNotas(alumnoMateria:AlumnoMaterias) : number
     }
 
     return (notaMasAltaPrimerParcial * notaMasAltaSegundoParcial)/2;
+}
+
+export async function getFinalDocente(req: Request, res: Response){
+    const {anio, mes} = req.query;
+    const bearerToken = req.header("authorization") as string;
+    const { id } = getTokenId(bearerToken);
+
+
+    try{
+        const db = await getInstanceDB();
+        
+        const listaExamen = await db.query("select ef.Id as Id, ma.Descripcion as Descripcion, tu.Descripcion as Turno, fh.Descripcion as FranjaHoraria, ef.Fecha as Fecha from DocenteMaterias dm inner join ExamenFinal ef on ef.IdDocenteMaterias = dm.Id inner join MateriaDivision md on md.Id = dm.IdMateriaDivision inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria inner join Materia ma on ma.Id = pem.IdMateria inner join Cronograma cr on ef.IdCronograma = cr.Id inner join Turno tu on tu.Id = cr.IdTurno inner join FranjaHoraria fh on fh.Id = cr.IdFranjaHoraria where dm.IdDocente = ? and YEAR(ef.Fecha) = ? and MONTH(ef.Fecha) = ?",[id,anio,mes]);
+
+        return res.json(listaExamen);
+    }catch(error){
+        console.log(error);
+        return res.status(500).json({
+          msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+
+export async function getFinalAlumno(req: Request, res: Response){
+    const idExamenFinal = req.params.idExamenFinal;
+
+    try{
+        const db = await getInstanceDB();
+        
+        const listaAlumnos = await db.query("select efa.Id as IdExamenFinalAlumno, am.Id as IdAlumnoMaterias, us.Nombre as Nombre, us.Apellido as Apellido from ExamenFinalAlumno efa inner join AlumnoMaterias am on am.Id = efa.IdAlumnoMateria inner join usuarios us on us.Id = am.IdAlumno where efa.Id = ?",[idExamenFinal]);
+
+        return res.json(listaAlumnos);
+    }catch(error){
+        console.log(error);
+        return res.status(500).json({
+          msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
 }

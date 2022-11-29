@@ -16,5 +16,6 @@ export const errorMsg = {
     ERROR_MATERIA_NO_EXISTE:"No existe una materia con ese Id",
     ERROR_DOCENTE_NO_DISPONIBLE_EN_CRONOGRAMA:"El docente no esta disponible en ese horario",
     ERROR_DOCENTE_ASIGNADO_A_MATERIADIVISION:"Ya hay asignado un docente para esta materia en esta division",
+    ERROR_DOCENTE_YA_NO_PUEDE_CALIFICAR_FINAL:"Ya no se puede calificar este final ya que no es la fecha del mismo.",
     ERROR_NO_SE_PUEDE_MODIFICAR_NOTAS_ALUMNO:"El estado academico del alumno en la materia no permite modificar las notas",
   };

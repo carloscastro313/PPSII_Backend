@@ -239,3 +239,45 @@ export async function createAlumno(req: Request, res: Response) {
 
     return flag;
   }
+
+
+  export async function inscribirAlumnoMateria(req: Request, res: Response) {
+    const {IdAlumno, IdMateriaDivision} = req.body;
+
+    try {
+      const db = await getInstanceDB();
+
+      const [materia] : any = await db.query(`select ma.Id as Id from MateriaDivision md 
+      inner join PlanEstudioMateria pem on md.IdPlanEstudioMateria = pem.Id 
+      inner join Materia ma on pem.IdMateria = ma.Id 
+      where md.Id = ? `,[IdMateriaDivision]);
+      
+
+      const existeAlumnoMateria = db.query(`select * from AlumnoMaterias am
+      inner join MateriaDivision md on am.IdMateriaDivision = md.Id 
+      inner join PlanEstudioMateria pem on md.IdPlanEstudioMateria = pem.Id 
+      inner join Materia ma on pem.IdMateria = ma.Id 
+      where am.IdAlumno = ? and ma.Id = ? and am.IdEstadoAcademico != ?`,[IdAlumno,materia.Id,EstadosAlumnoMateria.MateriaDesaprobada]);
+
+      if((await existeAlumnoMateria).length > 0){
+        return res.status(400).json({
+          msg: "El alumno ya esta inscripto a esta materia"
+        })
+      }
+      
+      await db.insert("AlumnoMaterias",{
+        IdAlumno,
+        IdMateriaDivision,
+        IdEstadoAcademico : EstadosAlumnoMateria.CursadaRegular,
+      });
+
+      return res.json({
+        msg: "El alumno se a inscribio con exito a la materia",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        msg: errorMsg.ERROR_INESPERADO,
+      });
+    }
+  }

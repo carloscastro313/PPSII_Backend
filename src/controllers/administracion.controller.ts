@@ -868,7 +868,7 @@ function generarExamenFinal(divisiones: any[], arrFecha: Date[]){
     
     const arrDivisiones = divisiones.filter((value : any) => value.Dia === strAux);
 
-    arr = [...arr, ...arrDivisiones.map((value: any) =>{ return {IdCronograma: value.IdCronograma, IdDocenteMaterias: value.IdDocenteMaterias, Fecha: `${arrFecha[i].getUTCFullYear()}-${arrFecha[i].getUTCMonth()}-${arrFecha[i].getUTCDate()} 00:00:00.000`}})]
+    arr = [...arr, ...arrDivisiones.map((value: any) =>{ return {IdCronograma: value.IdCronograma, IdDocenteMaterias: value.IdDocenteMaterias, Fecha: `${arrFecha[i].getUTCFullYear()}-${arrFecha[i].getUTCMonth() + 1}-${arrFecha[i].getUTCDate()} 00:00:00.000`}})]
   }
 
   return arr;
