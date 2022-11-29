@@ -19,6 +19,8 @@ import Materia from "../interface/Materia";
 import { getTokenId } from "../helpers/jwt";
 import { FranjasHorarias } from "../enums/franjaHoraria";
 import { Turnos } from "../enums/turnos";
+import InstanciaInscripcion from "../interface/InstanciaInscripcion";
+import ExamenFinalAlumno from "../interface/ExamenFinalAlumno";
 
 export async function getAlumnos(
   req: Request,
@@ -407,7 +409,7 @@ export async function getExamenesAnotados(req: Request, res: Response) {
 
     const finalesPendiente = await db.query(
       `
-      select ef.Fecha as Fecha, ma.Descripcion as Materia, cr.IdFranjaHoraria as IdFranjaHoraria, cr.IdTurno as IdTurno from AlumnoMaterias am
+      select ef.Fecha as Fecha, ma.Descripcion as Materia, cr.IdTurno as Turno, cr.IdFranjaHoraria as FranjaHoraria from AlumnoMaterias am
       inner join ExamenFinalAlumno efa on efa.IdAlumnoMateria = am.Id
       inner join ExamenFinal ef on ef.Id = efa.IdExamenFinal
       inner join DocenteMaterias dm on dm.Id = ef.IdDocenteMaterias
@@ -433,26 +435,24 @@ function transformFinalesPendiente(finales: any[]) {
   const arr = [];
 
   for (let i = 0; i < finales.length; i++) {
-    const { Fecha, Materia, IdFranjaHoraria, IdTurno } = finales[i];
     let aux: any = {
-      Fecha,
-      Materia,
+      ...finales[i],
     };
 
-    switch (IdTurno) {
+    switch (aux.Turno) {
       case Turnos.Mañana:
-        aux.FranjaHoraria = getMañana(IdFranjaHoraria);
+        aux.FranjaHoraria = getMañana(aux.FranjaHoraria);
         break;
       case Turnos.Tarde:
-        aux.FranjaHoraria = getTarde(IdFranjaHoraria);
+        aux.FranjaHoraria = getTarde(aux.FranjaHoraria);
         break;
       case Turnos.Noche:
-        aux.FranjaHoraria = getNoche(IdFranjaHoraria);
+        aux.FranjaHoraria = getNoche(aux.FranjaHoraria);
         break;
       default:
         break;
     }
-
+    delete aux.Turno;
     arr.push(aux);
   }
 
@@ -532,6 +532,225 @@ export async function getNotasMaterias(req: Request, res: Response) {
     }
 
     return res.json(materiasConNotas);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+}
+
+export async function getFinalesDisponible(req: Request, res: Response) {
+  const bearerToken = req.header("authorization") as string;
+  const { id } = getTokenId(bearerToken);
+
+  try {
+    const db = await getInstanceDB();
+
+    const now = new Date();
+
+    var values: BindValue[] = new Array(3);
+    values[0] = now.toISOString();
+    values[1] = now.toISOString();
+    values[2] = 1;
+
+    console.log(values);
+
+    const instanciaInscripciones = await db.query<InstanciaInscripcion>(
+      "SELECT * FROM InstanciaInscripcion WHERE FechaInicio <= ? AND FechaFinal >= ? AND IdTipo = ?",
+      values
+    );
+
+    // if (instanciaInscripciones.length == 0) {
+    //   return res.status(400).json({
+    //     msg: "No hay instancias de inscripcion habilitadas",
+    //   });
+    // }
+
+    var [carrera] = await db.select<AlumnoCarrera>(
+      "AlumnoCarrera",
+      { IdAlumno: id },
+      { limit: 1 }
+    );
+
+    var arrCarrera = await db.select<Carrera>("Carrera", {
+      Id: carrera.IdCarrera,
+    });
+
+    if (arrCarrera.length == 0) {
+      return res.status(400).json({
+        msg: "Carrera no existe",
+      });
+    }
+
+    var arrPlanEstudio = await db.select<PlanEstudio>("PlanEstudio", {
+      Nombre: arrCarrera[0].PlanActual,
+    });
+    console.log(arrPlanEstudio);
+    if (arrPlanEstudio.length == 0) {
+      return res.status(400).json({
+        msg: "Plan de estudio no existe",
+      });
+    }
+
+    const idPlan = arrPlanEstudio[0].Id || -1;
+
+    var arrMateriaCorrelativas: any = [];
+
+    await db.transaction(async (t) => {
+      var materias = await t.query<Materia>(
+        "select ma.Id as Id, ma.Descripcion as Descripcion, pem.Id as IdPlanEstudioMateria from PlanEstudioMateria pem inner join Materia ma on pem.IdMateria = ma.Id where pem.IdPlan = ?",
+        [idPlan]
+      );
+      var arrcorrelativas = await t.select<Correlativa>("Correlativa");
+      materias.forEach((materia: any) => {
+        arrMateriaCorrelativas.push({
+          ...materia,
+          correlativas: arrcorrelativas.filter(
+            (value) => value.IdMateria === materia.Id
+          ),
+        });
+      });
+    });
+
+    const alumnoMateriaAprobadas: Materia[] = await db.query<Materia>(
+      `
+    select ma.Id as Id, ma.Descripcion as Descripcion, md.Id as IdMateriaDivision from AlumnoMaterias am 
+    inner join MateriaDivision md on am.IdMateriaDivision = md.Id 
+    inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria 
+    inner join Materia ma on ma.Id = pem.IdMateria 
+    where am.IdAlumno = ? and am.IdEstadoAcademico = ?
+    `,
+      [id, EstadosAlumnoMateria.MateriaAprobada]
+    );
+
+    const alumnoMateriaCursadas: any[] = await db.query(
+      `
+    select ma.Id as Id, ma.Descripcion as Descripcion, md.Id as IdMateriaDivision, am.Id as IdAlumnoMateria from AlumnoMaterias am 
+    inner join MateriaDivision md on am.IdMateriaDivision = md.Id 
+    inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria 
+    inner join Materia ma on ma.Id = pem.IdMateria 
+    where am.IdAlumno = ? and am.IdEstadoAcademico = ?
+    `,
+      [id, EstadosAlumnoMateria.CursadaAprobada]
+    );
+
+    const materiasValidas = getFinalMateria(
+      arrMateriaCorrelativas,
+      alumnoMateriaAprobadas,
+      alumnoMateriaCursadas
+    );
+
+    let finalesDisponibles: any[] = [];
+
+    await db.transaction(async (t) => {
+      for (let i = 0; i < materiasValidas.length; i++) {
+        const aux = await t.query(
+          `
+          select md.Id as IdMateriaDivision, ef.Id as IdExamenFinal, ef.Fecha as Fechas, ma.Descripcion as Nombre, cr.IdTurno as Turno, cr.IdFranjaHoraria as FranjaHoraria from ExamenFinal ef
+          inner join DocenteMateria dm on dm.Id = ef.IdDocenteMaterias
+          inner join MateriaDivision md on md.Id = dm.IdMateriaDivision
+          inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria
+          inner join Materia ma on ma.Id = pem.IdMateria 
+          inner join Cronograma cr on ef.IdCronograma = cr.Id
+          where ma.Id = ? and ef.Fecha > ?
+          `,
+          [
+            materiasValidas[i],
+            instanciaInscripciones[0].FechaFinal || new Date(),
+          ]
+        );
+        finalesDisponibles = [...finalesDisponibles, ...aux];
+      }
+
+      let examenFinalAlumno: ExamenFinalAlumno[] = [];
+
+      for (let i = 0; i < alumnoMateriaCursadas.length; i++) {
+        const aux = await db.select<ExamenFinalAlumno>("ExamenFinalAlumno", {
+          IdAlumnoMateria: alumnoMateriaCursadas[i].IdAlumnoMateria,
+          Nota: -1,
+        });
+      }
+
+      let examenFinalAlumnoIds: number[] = examenFinalAlumno.map(
+        (val) => val.IdExamenFinal as number
+      );
+
+      finalesDisponibles = finalesDisponibles.filter(
+        (val) => !examenFinalAlumnoIds.includes(val.Id)
+      );
+    });
+
+    return res.json(transformFinalesPendiente(finalesDisponibles));
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+}
+
+function getFinalMateria(
+  materias: any[],
+  alumnoMateriasAprobadas: Materia[],
+  alumnoMateriasCursadas: Materia[]
+) {
+  const arr = [];
+  const arrMaterias: any[] = [];
+  const alumnoMateriaIds = alumnoMateriasAprobadas.map(
+    ({ Id }) => Id as number
+  );
+  const alumnoMateriaCursadaIds = alumnoMateriasCursadas.map(
+    ({ Id }) => Id as number
+  );
+
+  materias.forEach((val) => {
+    if (alumnoMateriaCursadaIds.includes(val.Id)) arrMaterias.push(val);
+  });
+
+  for (let i = 0; i < arrMaterias.length; i++) {
+    if (arrMaterias[i].correlativas != null) {
+      const correlativasIds: number[] = arrMaterias[i].correlativas.map(
+        (value: any) => {
+          return value.IdCorrelativa;
+        }
+      );
+
+      if (!compareArrs(correlativasIds, alumnoMateriaIds)) continue;
+    }
+
+    arr.push(materias[i].IdPlanEstudioMateria);
+  }
+
+  return arr;
+}
+
+export async function createExamenFinalAlumno(req: Request, res: Response) {
+  const { IdExamenFinal, IdMateriaDivision } = req.body;
+  const bearerToken = req.header("authorization") as string;
+  const { id } = getTokenId(bearerToken);
+
+  try {
+    const db = await getInstanceDB();
+
+    const alumnoMaterias = await db.query<AlumnoMaterias>(
+      "select * from AlumnoMaterias where IdMateriaDivision = ? and IdEstadoAcademico = ?",
+      [IdMateriaDivision, EstadosAlumnoMateria.CursadaAprobada]
+    );
+
+    if (alumnoMaterias.length == 0) {
+      return res.status(400).json({
+        msg: "El alumno no puede inscribirse a esta materia",
+      });
+    }
+
+    const IdAlumnoMateria = alumnoMaterias[0].Id || -1;
+
+    await db.insert<ExamenFinalAlumno>("ExamenFinalAlumno", {
+      IdExamenFinal,
+      IdAlumnoMateria,
+      Nota: -1,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
