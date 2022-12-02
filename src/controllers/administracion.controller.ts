@@ -873,3 +873,29 @@ function generarExamenFinal(divisiones: any[], arrFecha: Date[]){
 
   return arr;
 }
+
+export async function checkCanCreateInstancia(req: Request,res: Response): Promise<Response> {
+  const idTipoInstancia = req.params.idTipoInstancia;
+
+  const now = new Date();
+  const db = await getInstanceDB();
+
+  var tipo = Number.parseInt(idTipoInstancia);
+
+  console.log(idTipoInstancia);
+
+  try {
+    const instanciasProximas = await db.query("SELECT * FROM InstanciaInscripcion WHERE IdTipo = ? AND FechaInicio > ? AND FechaFinal > ?",[idTipoInstancia,now.toISOString(),now.toISOString()]);
+    
+    if(instanciasProximas.length > 0){
+      return res.json(false);
+    }
+  
+    return res.json(true);
+  }catch(error){
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
+}
