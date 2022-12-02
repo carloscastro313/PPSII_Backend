@@ -169,9 +169,7 @@ export async function createAlumno(req: Request, res: Response) {
 }
 
 export async function getInscripcionMateria(req: Request, res: Response) {
-  const carreraId = req.params.CarreraId;
-  const bearerToken = req.header("authorization") as string;
-  const { id } = getTokenId(bearerToken);
+  const id = req.params.idAlumno;
 
   try {
     const db = await getInstanceDB();
@@ -184,7 +182,14 @@ export async function getInscripcionMateria(req: Request, res: Response) {
         body: errorMsg.ERROR_LEGAJO_NO_EXISTE,
       });
     }
-    var arrCarrera = await db.select<Carrera>("Carrera", { Id: carreraId });
+
+    var alumnoCarrera = await db.select<AlumnoCarrera>("AlumnoCarrera", {
+      IdAlumno: usuario.Id,
+    });
+
+    var arrCarrera = await db.select<Carrera>("Carrera", {
+      Id: alumnoCarrera[0].IdCarrera,
+    });
 
     if (arrCarrera.length == 0) {
       return res.status(400).json({
@@ -223,7 +228,7 @@ export async function getInscripcionMateria(req: Request, res: Response) {
     });
 
     const alumnoMateria = await db.query<Materia>(
-      "select ma.Id as Id, ma.Descripcion as Descripcion, md.Id as IdMateriaDivision from AlumnoMaterias am inner join MateriaDivision md on am.IdMateriaDivision = md.Id inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria inner join Materia ma on ma.Id = pem.IdMateria where am.IdAlumno = ? and am.IdEstadoAcademico = ? or am.IdEstadoAcademico = ?",
+      "select ma.Id as Id, ma.Descripcion as Descripcion, md.Id as IdMateriaDivision from AlumnoMaterias am inner join MateriaDivision md on am.IdMateriaDivision = md.Id inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria inner join Materia ma on ma.Id = pem.IdMateria where am.IdAlumno = ? and (am.IdEstadoAcademico = ? or am.IdEstadoAcademico = ?)",
       [
         usuario.Id as number,
         EstadosAlumnoMateria.CursadaAprobada,
@@ -231,9 +236,15 @@ export async function getInscripcionMateria(req: Request, res: Response) {
       ]
     );
 
-    const materiasValidas = getMateriasValidas(
+    const alumnoMateriaCursando = await db.query<Materia>(
+      "select ma.Id as Id, ma.Descripcion as Descripcion, md.Id as IdMateriaDivision from AlumnoMaterias am inner join MateriaDivision md on am.IdMateriaDivision = md.Id inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria inner join Materia ma on ma.Id = pem.IdMateria where am.IdAlumno = ? and am.IdEstadoAcademico = ?",
+      [usuario.Id as number, EstadosAlumnoMateria.CursadaRegular]
+    );
+
+    let materiasValidas = getMateriasValidas(
       arrMateriaCorrelativas,
-      alumnoMateria
+      alumnoMateria,
+      alumnoMateriaCursando
     );
 
     console.log(materiasValidas);
@@ -243,7 +254,7 @@ export async function getInscripcionMateria(req: Request, res: Response) {
     await db.transaction(async (t) => {
       for (let i = 0; i < materiasValidas.length; i++) {
         const aux = await t.query(
-          "select md.Id as Id, ma.Descripcion as Descripcion, tu.Descripcion as Turno, fh.Descripcion as FranjaHoraria from MateriaDivision md inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria inner join Materia ma on ma.Id = pem.IdMateria inner join cronograma cr on cr.Id = md.IdCronograma inner join Turno tu on tu.Id inner join FranjaHoraria fh on fh.Id = cr.IdFranjaHoraria where pem.Id = ?",
+          "select md.Id as Id, ma.Descripcion as Descripcion, cr.Dia as Dia ,tu.Descripcion as Turno, fh.Descripcion as FranjaHoraria from MateriaDivision md inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria inner join Materia ma on ma.Id = pem.IdMateria inner join cronograma cr on cr.Id = md.IdCronograma inner join Turno tu on tu.Id inner join FranjaHoraria fh on fh.Id = cr.IdFranjaHoraria where pem.Id = ?",
           [materiasValidas[i]]
         );
         materiasDivisiones = [...materiasDivisiones, ...aux];
@@ -259,12 +270,23 @@ export async function getInscripcionMateria(req: Request, res: Response) {
   }
 }
 
-function getMateriasValidas(materias: any[], alumnoMaterias: Materia[]) {
+function getMateriasValidas(
+  materias: any[],
+  alumnoMaterias: Materia[],
+  alumnoMateriaCursando: Materia[]
+) {
   const arr = [];
   const alumnoMateriaIds = alumnoMaterias.map(({ Id }) => Id as number);
+  const alumnoMateriaCorrelativasIds = alumnoMateriaCursando.map(
+    ({ Id }) => Id as number
+  );
 
   for (let i = 0; i < materias.length; i++) {
-    if (alumnoMateriaIds.includes(materias[i].Id as number)) continue;
+    if (
+      alumnoMateriaIds.includes(materias[i].Id as number) ||
+      alumnoMateriaCorrelativasIds.includes(materias[i].Id as number)
+    )
+      continue;
 
     if (materias[i].correlativas != null) {
       const correlativasIds: number[] = materias[i].correlativas.map(
@@ -498,35 +520,46 @@ const getNoche = (IdFranjaHoraria: number) => {
   }
 };
 
-
 export async function getNotasMaterias(req: Request, res: Response) {
-
   const bearerToken = req.header("authorization") as string;
   const { id } = getTokenId(bearerToken);
   var materiasConNotas = [];
 
-  try{
+  try {
     const db = await getInstanceDB();
 
-    var alumnoMaterias = await db.select<AlumnoMaterias>("AlumnoMaterias",{IdAlumno: id});
+    var alumnoMaterias = await db.select<AlumnoMaterias>("AlumnoMaterias", {
+      IdAlumno: id,
+    });
 
     for (let i = 0; i < alumnoMaterias.length; i++) {
-      var materia = await db.selectOne<Materia>("Materia",{Id: alumnoMaterias[i].IdMateria});
-      
-      var estadoAcademico = mapEstadosAlumnoMateria(alumnoMaterias[i].IdEstadoAcademico);
+      var materia = await db.selectOne<Materia>("Materia", {
+        Id: alumnoMaterias[i].IdMateria,
+      });
 
-      if(alumnoMaterias[i].IdEstadoAcademico != EstadosAlumnoMateria.MateriaDesaprobada){
+      var estadoAcademico = mapEstadosAlumnoMateria(
+        alumnoMaterias[i].IdEstadoAcademico
+      );
+
+      if (
+        alumnoMaterias[i].IdEstadoAcademico !=
+        EstadosAlumnoMateria.MateriaDesaprobada
+      ) {
         materiasConNotas.push({
           IdMateria: materia.Id,
           Nombre: materia.Descripcion,
           NotaPrimerParcial: alumnoMaterias[i].NotaPrimerParcial,
           NotaSegundoParcial: alumnoMaterias[i].NotaSegundoParcial,
-          NotaRecuperatorioPrimerParcial: alumnoMaterias[i].NotaRecuperatorioPrimerParcial,
-          NotaRecuperatorioSegundoParcial: alumnoMaterias[i].NotaRecuperatorioSegundoParcial,
-          NotaRecuperatorioPrimerParcial2: alumnoMaterias[i].NotaRecuperatorioPrimerParcial2,
-          NotaRecuperatorioSegundoParcial2: alumnoMaterias[i].NotaRecuperatorioSegundoParcial2,
+          NotaRecuperatorioPrimerParcial:
+            alumnoMaterias[i].NotaRecuperatorioPrimerParcial,
+          NotaRecuperatorioSegundoParcial:
+            alumnoMaterias[i].NotaRecuperatorioSegundoParcial,
+          NotaRecuperatorioPrimerParcial2:
+            alumnoMaterias[i].NotaRecuperatorioPrimerParcial2,
+          NotaRecuperatorioSegundoParcial2:
+            alumnoMaterias[i].NotaRecuperatorioSegundoParcial2,
           NotaFinal: alumnoMaterias[i].NotaFinal,
-          EstadoAcademico: estadoAcademico
+          EstadoAcademico: estadoAcademico,
         });
       }
     }

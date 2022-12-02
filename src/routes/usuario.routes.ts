@@ -9,6 +9,7 @@ import {
   updateUsuario,
   login,
   checkSesion,
+  cambiarContraseña,
 } from "../controllers/usuario.controller";
 import validateToken from "./validate_token";
 
@@ -22,6 +23,10 @@ router
   .get(validateToken, getUsuario)
   .delete(validateToken, deleteUsuario)
   .put(validateToken, updateUsuario);
+
+router
+  .route("/cambiarcontrasenia/:UsuarioId")
+  .put(validateToken, cambiarContraseña);
 
 router.route("/login").post(login);
 router.route("/check").post(validateToken, checkSesion);

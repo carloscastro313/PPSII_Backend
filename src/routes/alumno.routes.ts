@@ -31,7 +31,7 @@ router
   .get(validateToken, getAlumnosPorIdMateriaDivision);
 
 router
-  .route("/getInscripcionMateria/:CarreraId")
+  .route("/getInscripcionMateria/:idAlumno")
   .get(validateToken, getInscripcionMateria);
 
 router
