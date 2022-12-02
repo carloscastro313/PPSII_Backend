@@ -5,6 +5,8 @@ import Usuario from "../interface/Usuario";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { getTokenId } from "../helpers/jwt";
+import { TiposUsuario } from "../enums/tiposUsuario";
+import MateriaDivision from "../interface/MateriaDivision";
 
 export async function getUsuarios(
   req: Request,
@@ -251,6 +253,54 @@ export async function updateUsuario(req: Request, res: Response) {
   }
 }
 
+export async function traerGruposDePersonas(req: Request, res: Response): Promise<Response>{
+  var response = [];
+
+  try{
+      const db = await getInstanceDB();
+
+      var administraciones = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Administracion});
+      var secretarias = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Secretaria});
+      var docentes = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Docente});
+      var alumnos = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Alumno});
+
+      console.log("secretarias");
+      console.log(secretarias);
+
+      var adminIds = administraciones.map(({ Id }) => Id as number);
+      var secretariasIds = secretarias.map(({ Id }) => Id as number);
+      var docentesIds = docentes.map(({ Id }) => Id as number);
+      var todosLosAlumnosIds = alumnos.map(({ Id }) => Id as number);
+
+      response.push({
+          Administracion: adminIds,
+          Secretaria: secretariasIds,
+          Docentes: docentesIds,
+          TodosLosAlumnos: todosLosAlumnosIds,
+      })
+
+      console.log(response);
+
+      var materiaDivision = await db.select<MateriaDivision>("MateriaDivision");
+
+      // for(let i = 0; i < materiaDivision.length; i++){
+      //     var alumnosPorDivision = await db.select<AlumnoMaterias>("AlumnoMaterias",{IdMateriaDivision: materiaDivision[i].Id});
+      //     var division = materiaDivision[i].Division;
+          
+      //     response.push({
+      //         Division: division,
+      //         AlumnosDivisionId: alumnosPorDivision[i].Id
+      //     });
+      // }
+
+      return res.json(response);
+  } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+      });
+  }
+}
 export async function cambiarContraseña(req: Request, res: Response) {
   const id = req.params.UsuarioId;
   let Contraseña = req.body.Contraseña;

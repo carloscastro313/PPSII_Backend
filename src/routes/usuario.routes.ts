@@ -9,6 +9,7 @@ import {
   updateUsuario,
   login,
   checkSesion,
+  traerGruposDePersonas,
   cambiarContraseña,
 } from "../controllers/usuario.controller";
 import validateToken from "./validate_token";
@@ -24,6 +25,8 @@ router
   .delete(validateToken, deleteUsuario)
   .put(validateToken, updateUsuario);
 
+router.route('/traerGruposDePersonas')
+  .get(validateToken,traerGruposDePersonas);
 router
   .route("/cambiarcontrasenia/:UsuarioId")
   .put(validateToken, cambiarContraseña);

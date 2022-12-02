@@ -21,6 +21,8 @@ import { FranjasHorarias } from "../enums/franjaHoraria";
 import { Turnos } from "../enums/turnos";
 import InstanciaInscripcion from "../interface/InstanciaInscripcion";
 import ExamenFinalAlumno from "../interface/ExamenFinalAlumno";
+import mandarMail from "../helpers/mailer";
+import ExamenFinal from "../interface/ExamenFinal";
 
 export async function getAlumnos(
   req: Request,
@@ -348,6 +350,13 @@ export async function inscribirAlumnoMateria(req: Request, res: Response) {
       IdMateriaDivision,
       IdEstadoAcademico: EstadosAlumnoMateria.CursadaRegular,
     });
+
+    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE Id = ?",[IdAlumno]);
+    var usuariosMails = usuarios.map(
+      ({ Mail }) => Mail as string
+    );
+
+    await mandarMail(usuariosMails,"FUISTE INSCRIPTO A UNA MATERIA","Se te inscribio correctamente a la materia: "+materia.Descripcion,"");
 
     return res.json({
       msg: "El alumno se a inscribio con exito a la materia",
@@ -784,6 +793,17 @@ export async function createExamenFinalAlumno(req: Request, res: Response) {
       IdAlumnoMateria,
       Nota: -1,
     });
+
+    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE Id = ?",[alumnoMaterias[0].IdAlumno]);
+    var usuariosMails = usuarios.map(
+      ({ Mail }) => Mail as string
+    );
+
+    var materia = await db.selectOne<Materia>("Materia",{Id: alumnoMaterias[0].IdMateria});
+    var examenFinal = await db.selectOne<ExamenFinal>("ExamenFinal",{Id: IdExamenFinal});
+
+    await mandarMail(usuariosMails,"FUISTE INSCRIPTO A UN FINAL","Se te inscribio correctamente a un final de "+materia.Descripcion+" el dia: "+examenFinal.Fecha,"");
+
   } catch (error) {
     console.log(error);
     return res.status(500).json({

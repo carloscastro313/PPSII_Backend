@@ -3,6 +3,7 @@ import { errorMsg } from '../const/errors';
 import getInstanceDB  from '../database'
 import { EstadosAlumnoMateria } from '../enums/estadoAlumnoMateria';
 import { TiposUsuario } from '../enums/tiposUsuario';
+import mandarMail from '../helpers/mailer';
 import AlumnoMaterias from '../interface/AlumnoMaterias';
 import Avisos from '../interface/Avisos';
 import AvisoUsuarios from '../interface/AvisoUsuarios';
@@ -52,7 +53,16 @@ export async function createAviso(req: Request, res: Response): Promise<Response
 
             for(let i = 0; i < newAviso.Receptores.length; i++){
                 var newAvisoUsuario : AvisoUsuarios = { IdAviso: idAviso, IdUsuario: newAviso.Receptores[i], Leido: 0 }
+
                 await t.insert<AvisoUsuarios>("AvisoUsuarios",{...newAvisoUsuario});
+
+                //MANDAR MAIL
+                var usuario = await db.query<Usuario>("SELECT * FROM Usuarios WHERE Id = ?",[newAviso.Receptores[i]]);
+                var usuariosMails = usuario.map(
+                    ({ Mail }) => Mail as string
+                );
+
+                await mandarMail(usuariosMails,"NUEVO AVISO: "+newAviso.Titulo,newAviso.Mensaje,"");
             }
         })
         
@@ -111,54 +121,6 @@ export async function traerTodosLosAvisosPorUsuario(req: Request, res: Response)
 
         console.log(error);
         
-        return res.status(500).json({
-        msg: errorMsg.ERROR_INESPERADO,
-        });
-    }
-}
-
-export async function traerGruposDePersonas(req: Request, res: Response): Promise<Response>{
-    var response = [];
-    try{
-        const db = await getInstanceDB();
-
-        var administraciones = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Administracion});
-        var secretarias = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Secretaria});
-        var docentes = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Docente});
-        var alumnos = await db.select<Usuario>("Usuario",{TipoUsuario: TiposUsuario.Alumno});
-
-        console.log("secretarias");
-        console.log(secretarias);
-
-        var adminIds = administraciones.map(({ Id }) => Id as number);
-        var secretariasIds = secretarias.map(({ Id }) => Id as number);
-        var docentesIds = docentes.map(({ Id }) => Id as number);
-        var todosLosAlumnosIds = alumnos.map(({ Id }) => Id as number);
-
-        response.push({
-            Administracion: adminIds,
-            Secretaria: secretariasIds,
-            Docentes: docentesIds,
-            TodosLosAlumnos: todosLosAlumnosIds,
-        })
-
-        console.log(response);
-
-        var materiaDivision = await db.select<MateriaDivision>("MateriaDivision");
-
-        // for(let i = 0; i < materiaDivision.length; i++){
-        //     var alumnosPorDivision = await db.select<AlumnoMaterias>("AlumnoMaterias",{IdMateriaDivision: materiaDivision[i].Id});
-        //     var division = materiaDivision[i].Division;
-            
-        //     response.push({
-        //         Division: division,
-        //         AlumnosDivisionId: alumnosPorDivision[i].Id
-        //     });
-        // }
-
-        return res.json(response);
-    } catch (error) {
-        console.log(error);
         return res.status(500).json({
         msg: errorMsg.ERROR_INESPERADO,
         });
