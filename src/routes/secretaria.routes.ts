@@ -1,10 +1,14 @@
-import { Router } from 'express'
-import validateToken from './validate_token';
+import { Router } from "express";
+import validateToken from "./validate_token";
 const router = Router();
 
-import { getSecretarias } from '../controllers/secretaria.controller'
+import {
+  getCarrerasValidas,
+  getSecretarias,
+} from "../controllers/secretaria.controller";
 
-router.route('/')
-    .get(validateToken,getSecretarias);
+router.route("/").get(validateToken, getSecretarias);
+
+router.route("/carrerasvigentes").get(validateToken, getCarrerasValidas);
 
 export default router;

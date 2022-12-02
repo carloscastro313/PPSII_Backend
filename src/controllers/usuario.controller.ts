@@ -8,7 +8,10 @@ import { getTokenId } from "../helpers/jwt";
 import { TiposUsuario } from "../enums/tiposUsuario";
 import MateriaDivision from "../interface/MateriaDivision";
 
-export async function getUsuarios(req: Request,res: Response): Promise<Response> {
+export async function getUsuarios(
+  req: Request,
+  res: Response
+): Promise<Response> {
   try {
     const db = await getInstanceDB();
     const usuarios = await db.select<Usuario>("Usuarios");
@@ -44,7 +47,10 @@ export async function createUsuario(req: Request, res: Response) {
       });
     }
 
-    usuario = await db.query("SELECT * FROM Usuarios WHERE DNI = ?",newUsuario.DNI);
+    usuario = await db.query(
+      "SELECT * FROM Usuarios WHERE DNI = ?",
+      newUsuario.DNI
+    );
 
     if (usuario.length != 0) {
       return res.status(400).json({
@@ -192,7 +198,7 @@ export async function updateUsuario(req: Request, res: Response) {
   const id = req.params.UsuarioId;
   const newUsuario = req.body;
 
-  if(newUsuario.Contraseña != null){
+  if (newUsuario.Contraseña != null) {
     await bcrypt.hash(newUsuario.Contraseña, 10).then((hash) => {
       newUsuario.Contraseña = hash;
     });
@@ -294,5 +300,33 @@ export async function traerGruposDePersonas(req: Request, res: Response): Promis
       return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
       });
+  }
+}
+export async function cambiarContraseña(req: Request, res: Response) {
+  const id = req.params.UsuarioId;
+  let Contraseña = req.body.Contraseña;
+
+  try {
+    const db = await getInstanceDB();
+
+    const [existe] = await db.select<Usuario>("Usuarios", { Id: id });
+
+    if (existe == null)
+      return res.status(400).json({
+        msg: "No existe el usuario",
+      });
+
+    Contraseña = await bcrypt.hash(Contraseña, 10);
+
+    await db.update<Usuario>("Usuarios", { Contraseña }, { Id: id });
+
+    return res.json({
+      msg: "Se a modificado el usuario",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
   }
 }
