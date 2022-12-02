@@ -86,7 +86,6 @@ export async function login(req: Request, res: Response) {
         body: errorMsg.ERROR_LEGAJO_NO_EXISTE,
       });
     }
-
     const result = await bcrypt.compare(Contraseña, usuario.Contraseña);
 
     if (!result) {
