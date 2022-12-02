@@ -3,6 +3,7 @@ import { errorMsg } from '../const/errors';
 import getInstanceDB  from '../database'
 import { EstadosAlumnoMateria } from '../enums/estadoAlumnoMateria';
 import { TiposUsuario } from '../enums/tiposUsuario';
+import mandarMail from '../helpers/mailer';
 import AlumnoMaterias from '../interface/AlumnoMaterias';
 import Avisos from '../interface/Avisos';
 import AvisoUsuarios from '../interface/AvisoUsuarios';
@@ -52,7 +53,16 @@ export async function createAviso(req: Request, res: Response): Promise<Response
 
             for(let i = 0; i < newAviso.Receptores.length; i++){
                 var newAvisoUsuario : AvisoUsuarios = { IdAviso: idAviso, IdUsuario: newAviso.Receptores[i], Leido: 0 }
+
                 await t.insert<AvisoUsuarios>("AvisoUsuarios",{...newAvisoUsuario});
+
+                //MANDAR MAIL
+                var usuario = await db.query<Usuario>("SELECT * FROM Usuarios WHERE Id = ?",[newAviso.Receptores[i]]);
+                var usuariosMails = usuario.map(
+                    ({ Mail }) => Mail as string
+                );
+
+                await mandarMail(usuariosMails,"NUEVO AVISO: "+newAviso.Titulo,newAviso.Mensaje,"");
             }
         })
         

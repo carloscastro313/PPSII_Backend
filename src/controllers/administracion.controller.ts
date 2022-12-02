@@ -21,6 +21,8 @@ import Usuario from "../interface/Usuario";
 import DocenteMaterias from "../interface/DocenteMaterias";
 import ExamenFinal from "../interface/ExamenFinal";
 import InstanciaInscripcion from "../interface/InstanciaInscripcion";
+import mandarMail from "../helpers/mailer";
+import { TiposInstanciaInscripciones } from "../enums/tipoInstanciaInscripcion";
 
 export async function getAdministraciones(
   req: Request,
@@ -99,7 +101,6 @@ export async function createInstanciaInscripcion(
     values[2] = newInstanciaInscripcion.IdTipo.toString();
 
     console.log(values);
-
     const instanciaInscripciones = await db.query(
       "SELECT * FROM InstanciaInscripcion WHERE FechaInicio <= ? AND FechaFinal >= ? AND IdTipo = ?",
       values
@@ -109,6 +110,17 @@ export async function createInstanciaInscripcion(
       return res.status(400).json({
         msg: errorMsg.ERROR_INSTANCIA_ACTIVA,
       });
+    }
+
+    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE TipoUsuario != ?",[TiposUsuario.Administracion]);
+    var usuariosMails = usuarios.map(
+      ({ Mail }) => Mail as string
+    );
+    
+    if(TiposInstanciaInscripciones.Finales){
+      await mandarMail(usuariosMails,"NUEVA INSTANCIA DE INSCRIPCION A FINALES","Se genero una instancia de inscripcion a finales, del "+newInstanciaInscripcion.FechaInicio+" hasta el "+newInstanciaInscripcion.FechaFinal,"");
+    }else{
+      await mandarMail(usuariosMails,"NUEVA INSTANCIA DE INSCRIPCION A MATERIAS","Se genero una instancia de inscripcion a materias, del "+newInstanciaInscripcion.FechaInicio+" hasta el "+newInstanciaInscripcion.FechaFinal,"");
     }
 
     await db.insert("InstanciaInscripcion", { ...newInstanciaInscripcion });
@@ -143,6 +155,13 @@ export async function createCarrera(
     }
 
     await db.insert("Carrera", { ...newCarrera });
+
+    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE TipoUsuario = ? OR TipoUsuario = ?",[TiposUsuario.Administracion,TiposUsuario.Secretaria]);
+    var usuariosMails = usuarios.map(
+      ({ Mail }) => Mail as string
+    );
+
+    await mandarMail(usuariosMails,"NUEVA CARRERA CREADA","Se creo una nueva carrera: "+newCarrera.Descripcion,"");
 
     return res.json(newCarrera);
   } catch (error) {
@@ -240,6 +259,14 @@ export async function createPlanEstudio(
         });
       }
     });
+
+    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE TipoUsuario = ? OR TipoUsuario = ?",[TiposUsuario.Administracion,TiposUsuario.Secretaria]);
+    var usuariosMails = usuarios.map(
+      ({ Mail }) => Mail as string
+    );
+    var carrera = await db.selectOne<Carrera>("Carrera",{Id: newPlanEstudio.Id});
+
+    await mandarMail(usuariosMails,"NUEVO PLAN DE ESTUDIO","Se creo un nuevo plan de estudio para la carrera: "+carrera.Descripcion+"","");
 
     return res.json(newPlanEstudio);
   } catch (error) {
@@ -506,6 +533,13 @@ export async function createMateria(
       });
     });
 
+    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE TipoUsuario = ? OR TipoUsuario = ?",[TiposUsuario.Administracion,TiposUsuario.Secretaria]);
+    var usuariosMails = usuarios.map(
+      ({ Mail }) => Mail as string
+    );
+
+    await mandarMail(usuariosMails,"NUEVA MATERIA CREADA","Se creo una nueva materia: "+newMateria.Descripcion,"");
+
     return res.json(newMateria);
   } catch (error) {
     console.log(error);
@@ -685,6 +719,16 @@ export async function asignarDocenteAMateria(req: Request,res: Response): Promis
 
     await db.insert<DocenteMaterias>("DocenteMaterias",newDocenteMateria);
 
+    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE Id = ?",[idDocente]);
+    var usuariosMails = usuarios.map(
+      ({ Mail }) => Mail as string
+    );
+
+    var planEstudioMateria = await db.selectOne<PlanEstudioMateria>("PlanEstudioMateria",{Id:materiaDivisionActual.IdPlanEstudioMateria});
+    var materia = await db.selectOne<Materia>("Materia",{Id:planEstudioMateria.IdMateria});
+
+    await mandarMail(usuariosMails,"NUEVA MATERIA ASIGNADA","Se le asigno una nueva materia: "+materia.Descripcion+". Para la division: "+materiaDivisionActual.Division+", los dias: "+cronogramaMateriaDivisionActual.Dia+", la franja horaria: "+mapFranjaHoraria(cronogramaMateriaDivisionActual.IdFranjaHoraria)+", en el turno: "+mapTurno(cronogramaMateriaDivisionActual.IdTurno),"");
+
     return res.json({
       msg: "Docente asignado a la materia de la division correctamente"
     });
@@ -833,6 +877,13 @@ export async function createInstanciaFinal(
     for (let i = 0; i < finales.length; i++) {
       await db.insert<ExamenFinal>("ExamenFinal",finales[i]);
     }
+
+    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios");
+    var usuariosMails = usuarios.map(
+      ({ Mail }) => Mail as string
+    );
+
+    await mandarMail(usuariosMails,"NUEVA INSTANCIA DE INSCRIPCION A FINALES","Se creo una nueva instancia de inscripcion a finales, desde el: "+newInstanciaInscripcion.FechaInicio+", hasta el: "+newInstanciaInscripcion.FechaFinal,"");
 
     return res.json({newInstanciaInscripcion, finales});
   } catch (error) {

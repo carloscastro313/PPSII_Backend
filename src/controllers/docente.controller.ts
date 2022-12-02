@@ -9,6 +9,7 @@ import { mapFranjaHoraria } from '../enums/franjaHoraria';
 import { TiposUsuario } from '../enums/tiposUsuario';
 import { mapTurno } from '../enums/turnos';
 import { getTokenId } from '../helpers/jwt';
+import mandarMail from '../helpers/mailer';
 import AlumnoMaterias from '../interface/AlumnoMaterias';
 import Cronograma from '../interface/Cronograma';
 import DocenteMaterias from '../interface/DocenteMaterias';
@@ -150,6 +151,15 @@ export async function agregarNotasAAlumno(req: Request, res: Response): Promise<
 
         await db.update<AlumnoMaterias>("AlumnoMaterias", alumnoMateria, {Id: alumnoMateria.Id});
 
+        var usuario = await db.query<Usuario>("SELECT * FROM Usuarios WHERE Id = ?",[alumnoMateria.IdAlumno]);
+        var usuariosMails = usuario.map(
+            ({ Mail }) => Mail as string
+        );
+
+        var materia = await db.selectOne<Materia>("Materia",{Id: alumnoMateria.IdMateria});
+
+        await mandarMail(usuariosMails,"ACTUALIZACION DE NOTAS","Se actualizaron tus notas para la materia: "+materia.Descripcion,"");
+
         return res.json("Notas actualizadas correctamente");
     }catch(error){
         console.log(error);
@@ -186,6 +196,19 @@ export async function agregarNotaFinalAAlumno(req: Request, res: Response): Prom
                 msg: errorMsg.ERROR_DOCENTE_YA_NO_PUEDE_CALIFICAR_FINAL,
               });
         }
+
+        var alumnoMateria = await db.selectOne<AlumnoMaterias>("AlumnoMaterias",{Id: idAlumnoMateria});
+
+        var usuario = await db.query<Usuario>("SELECT * FROM Usuarios WHERE Id = ?",[alumnoMateria.IdAlumno]);
+        var usuariosMails = usuario.map(
+            ({ Mail }) => Mail as string
+        );
+
+        var materiaDivision = await db.selectOne<MateriaDivision>("MateriaDivision",{Id: alumnoMateria.IdMateriaDivision});
+        var planEstudioMateria = await db.selectOne<PlanEstudioMateria>("PlanEstudioMateria",{Id: materiaDivision.IdPlanEstudioMateria});
+        var materia = await db.selectOne<Materia>("PlanEstudioMateria",{Id: planEstudioMateria.IdMateria});
+
+        await mandarMail(usuariosMails,"NOTA DE FINAL","Te corrigieron el final de la materia "+materia.Descripcion,"");
 
         return res.json({
             msg: "Nota de final actualizada correctamente"
