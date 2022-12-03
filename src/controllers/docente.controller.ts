@@ -178,8 +178,10 @@ export async function agregarNotasAAlumno(
     alumnoMateria.NotaRecuperatorioSegundoParcial2 =
       notas.NotaRecuperatorioSegundoParcial2;
 
-    alumnoMateria.IdEstadoAcademico =
-      estadoAlumnoMateriaSegunNotas(alumnoMateria,aprobarCursada);
+    alumnoMateria.IdEstadoAcademico = estadoAlumnoMateriaSegunNotas(
+      alumnoMateria,
+      aprobarCursada
+    );
 
     if (
       alumnoMateria.IdEstadoAcademico == EstadosAlumnoMateria.MateriaAprobada ||
@@ -230,7 +232,6 @@ export async function agregarNotaFinalAAlumno(
   req: Request,
   res: Response
 ): Promise<Response> {
-
   var idExamenFinalAlumno = req.body.idExamenFinalAlumno;
   var idAlumnoMateria = req.body.idAlumnoMateria;
   var nota = req.body.nota;
@@ -311,28 +312,41 @@ export async function agregarNotaFinalAAlumno(
   }
 }
 
-export async function desaprobarAlumno(req: Request,res: Response): Promise<Response> {
-    try{
-        var idAlumnoMateria = req.params.idAlumnoMateria;
+export async function desaprobarAlumno(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    var idAlumnoMateria = req.params.idAlumnoMateria;
 
-        const db = await getInstanceDB();
+    const db = await getInstanceDB();
 
-        await db.update<AlumnoMaterias>("AlumnoMaterias",{IdEstadoAcademico: EstadosAlumnoMateria.MateriaDesaprobada},{Id: idAlumnoMateria});
+    await db.update<AlumnoMaterias>(
+      "AlumnoMaterias",
+      { IdEstadoAcademico: EstadosAlumnoMateria.MateriaDesaprobada },
+      { Id: idAlumnoMateria }
+    );
 
-        return res.json({
-            msg: "Alumno desaprobado correctamente.",
-          });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            msg: errorMsg.ERROR_INESPERADO,
-        });
-    }
+    return res.json({
+      msg: "Alumno desaprobado correctamente.",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      msg: errorMsg.ERROR_INESPERADO,
+    });
+  }
 }
 
-function estadoAlumnoMateriaSegunNotas(alumnoMateria: AlumnoMaterias,aprobarCursada: boolean): number {
+function estadoAlumnoMateriaSegunNotas(
+  alumnoMateria: AlumnoMaterias,
+  aprobarCursada: boolean
+): number {
   var cantPrimero = 0;
   var cantSegundo = 0;
+
+  var estadoPrimero = 0;
+  var estadoSegundo = 0;
 
   var primerParcial: number[] = [
     alumnoMateria.NotaPrimerParcial,
@@ -381,14 +395,26 @@ function estadoAlumnoMateriaSegunNotas(alumnoMateria: AlumnoMaterias,aprobarCurs
     return EstadosAlumnoMateria.MateriaDesaprobada;
   }
 
-  if ((notaMasAltaPrimerParcial >= 4 &&
-    notaMasAltaPrimerParcial < 6 &&
-    notaMasAltaSegundoParcial >= 4 &&
-    notaMasAltaSegundoParcial < 6) && aprobarCursada) {
+  if (notaMasAltaPrimerParcial >= 4 && notaMasAltaPrimerParcial < 6) {
+    estadoPrimero = 1;
+  } else if (notaMasAltaPrimerParcial >= 6) {
+    estadoPrimero = 2;
+  }
+
+  if (notaMasAltaSegundoParcial >= 4 && notaMasAltaSegundoParcial < 6) {
+    estadoPrimero = 1;
+  } else if (notaMasAltaSegundoParcial >= 6) {
+    estadoPrimero = 2;
+  }
+
+  if (
+    (estadoPrimero === 1 || estadoSegundo === 1) &&
+    (aprobarCursada || (cantPrimero === 3 && cantSegundo === 3))
+  ) {
     return EstadosAlumnoMateria.CursadaAprobada;
   }
 
-  if (notaMasAltaPrimerParcial >= 6 && notaMasAltaSegundoParcial >= 6) {
+  if (estadoPrimero === 2 && estadoSegundo === 2) {
     return EstadosAlumnoMateria.MateriaAprobada;
   }
 
