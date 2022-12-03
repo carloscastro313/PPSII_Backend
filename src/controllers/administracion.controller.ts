@@ -980,18 +980,6 @@ export async function traerGruposDePersonas(req: Request, res: Response): Promis
 
       console.log(response);
 
-      var materiaDivision = await db.select<MateriaDivision>("MateriaDivision");
-
-      for(let i = 0; i < materiaDivision.length; i++){
-        var alumnosPorDivision = await db.select<AlumnoMaterias>("AlumnoMaterias",{IdMateriaDivision: materiaDivision[i].Id});
-        var division = materiaDivision[i].Division;
-        
-        response.push({
-          Division: division,
-          AlumnosDivisionId: alumnosPorDivision[i].Id
-        });
-      }
-
       return res.json(response);
   } catch (error) {
       console.log(error);
