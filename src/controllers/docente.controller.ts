@@ -313,7 +313,7 @@ export async function agregarNotaFinalAAlumno(
 
 export async function desaprobarAlumno(req: Request,res: Response): Promise<Response> {
     try{
-        var idAlumnoMateria = req.params.idAlumnoMateria;
+        var idAlumnoMateria = req.body.idAlumnoMateria;
 
         const db = await getInstanceDB();
 

@@ -25,7 +25,7 @@ router.route('/getFinalDocente')
 router.route('/getFinalAlumno/:idExamenFinal')
     .get(validateToken,getFinalAlumno);
 
-router.route('/desaprobarAlumno/:idAlumnoMateria')
-    .get(validateToken,desaprobarAlumno);
+router.route('/desaprobarAlumno')
+    .post(validateToken,desaprobarAlumno);
 
 export default router;
