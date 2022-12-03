@@ -169,13 +169,13 @@ export async function agregarNotasAAlumno(
     alumnoMateria.NotaPrimerParcial = notas.NotaPrimerParcial;
     alumnoMateria.NotaSegundoParcial = notas.NotaSegundoParcial;
     alumnoMateria.NotaRecuperatorioPrimerParcial =
-      notas.RecuperatorioPrimerParcial;
+      notas.NotaRecuperatorioPrimerParcial;
     alumnoMateria.NotaRecuperatorioSegundoParcial =
-      notas.RecuperatorioSegundoParcial;
+      notas.NotaRecuperatorioSegundoParcial;
     alumnoMateria.NotaRecuperatorioPrimerParcial2 =
-      notas.RecuperatorioPrimerParcial2;
+      notas.NotaRecuperatorioPrimerParcial2;
     alumnoMateria.NotaRecuperatorioSegundoParcial2 =
-      notas.RecuperatorioSegundoParcial2;
+      notas.NotaRecuperatorioSegundoParcial2;
 
     alumnoMateria.IdEstadoAcademico =
       estadoAlumnoMateriaSegunNotas(alumnoMateria);
@@ -205,7 +205,7 @@ export async function agregarNotasAAlumno(
       "PlanEstudioMateria",
       { Id: materiaDivision.IdPlanEstudioMateria }
     );
-    var materia = await db.selectOne<Materia>("PlanEstudioMateria", {
+    var materia = await db.selectOne<Materia>("materia", {
       Id: planEstudioMateria.IdMateria,
     });
 
@@ -286,7 +286,7 @@ export async function agregarNotaFinalAAlumno(
       "PlanEstudioMateria",
       { Id: materiaDivision.IdPlanEstudioMateria }
     );
-    var materia = await db.selectOne<Materia>("PlanEstudioMateria", {
+    var materia = await db.selectOne<Materia>("materia", {
       Id: planEstudioMateria.IdMateria,
     });
 
@@ -309,7 +309,8 @@ export async function agregarNotaFinalAAlumno(
 }
 
 function estadoAlumnoMateriaSegunNotas(alumnoMateria: AlumnoMaterias): number {
-  var response = 0;
+  var cantPrimero = 0;
+  var cantSegundo = 0;
 
   var primerParcial: number[] = [
     alumnoMateria.NotaPrimerParcial,
@@ -330,34 +331,48 @@ function estadoAlumnoMateriaSegunNotas(alumnoMateria: AlumnoMaterias): number {
     if (primerParcial[i] >= notaMasAltaPrimerParcial) {
       notaMasAltaPrimerParcial = primerParcial[i];
     }
+    if (primerParcial[i] > 0) {
+      cantPrimero++;
+    }
   }
 
   for (let i = 0; i < segundoParcial.length; i++) {
     if (segundoParcial[i] >= notaMasAltaSegundoParcial) {
       notaMasAltaSegundoParcial = segundoParcial[i];
     }
+
+    if (segundoParcial[i] > 0) {
+      cantSegundo++;
+    }
   }
 
   if (notaMasAltaPrimerParcial == 0 || notaMasAltaSegundoParcial == 0) {
-    response = EstadosAlumnoMateria.CursadaRegular;
+    return EstadosAlumnoMateria.CursadaRegular;
   }
 
   if (
-    (notaMasAltaPrimerParcial < 4 && notaMasAltaPrimerParcial != 0) ||
-    (notaMasAltaSegundoParcial < 4 && notaMasAltaSegundoParcial != 0)
+    notaMasAltaPrimerParcial < 4 &&
+    cantPrimero === 3 &&
+    notaMasAltaSegundoParcial < 4 &&
+    cantSegundo === 3
   ) {
-    response = EstadosAlumnoMateria.MateriaDesaprobada;
+    return EstadosAlumnoMateria.MateriaDesaprobada;
   }
 
-  if (notaMasAltaPrimerParcial >= 4 && notaMasAltaSegundoParcial >= 4) {
-    response = EstadosAlumnoMateria.CursadaAprobada;
+  if (
+    notaMasAltaPrimerParcial >= 4 &&
+    notaMasAltaPrimerParcial < 6 &&
+    notaMasAltaSegundoParcial >= 4 &&
+    notaMasAltaSegundoParcial < 6
+  ) {
+    return EstadosAlumnoMateria.CursadaAprobada;
   }
 
   if (notaMasAltaPrimerParcial >= 6 && notaMasAltaSegundoParcial >= 6) {
-    response = EstadosAlumnoMateria.MateriaAprobada;
+    return EstadosAlumnoMateria.MateriaAprobada;
   }
 
-  return response;
+  return EstadosAlumnoMateria.CursadaRegular;
 }
 
 function notaFinalAlumnoMateriaSegunNotas(
