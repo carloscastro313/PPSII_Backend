@@ -254,6 +254,11 @@ export async function updateUsuario(req: Request, res: Response) {
   }
 }
 
+export async function gruposDeGente(req: Request, res: Response): Promise<Response> {
+  console.log("hola");
+  return res.json("hola");
+}
+
 export async function traerGruposDePersonas(req: Request, res: Response): Promise<Response>{
   var response = [];
 
