@@ -2,7 +2,7 @@ import { Router } from 'express'
 import validateToken from './validate_token';
 const router = Router();
 
-import { getAdministraciones, createInstanciaInscripcion, getInstanciaInscripcionActivas, getTipoInstanciaInscripciones, getCarreras, createCarrera, getPlanesEstudio, createPlanEstudio, getMaterias, createMateria, updateCarrera, getPlanesEstudioById, getPlanesEstudioByCarreraId, getMateriaById, updateMateria, getTurnos, getFranjaHoraria, getPlanesEstudioByIdMaterias, createMateriasDivision, asignarDocenteAMateria, getCronogramaDocente, createInstanciaFinal, checkCanCreateInstancia } from '../controllers/administracion.controller'
+import { getAdministraciones, createInstanciaInscripcion, getInstanciaInscripcionActivas, getTipoInstanciaInscripciones, getCarreras, createCarrera, getPlanesEstudio, createPlanEstudio, getMaterias, createMateria, updateCarrera, getPlanesEstudioById, getPlanesEstudioByCarreraId, getMateriaById, updateMateria, getTurnos, getFranjaHoraria, getPlanesEstudioByIdMaterias, createMateriasDivision, asignarDocenteAMateria, getCronogramaDocente, createInstanciaFinal, checkCanCreateInstancia, traerGruposDePersonas } from '../controllers/administracion.controller'
 
 router.route('/')
     .get(validateToken,getAdministraciones);
@@ -63,4 +63,7 @@ router.route('/instanciaFinal')
 router.route('/checkCanCreateInstancia/:idTipoInstancia')
     .get(validateToken,checkCanCreateInstancia);
 
+router.route('/traerGruposDePersonas')
+    .get(validateToken,traerGruposDePersonas);
+    
 export default router;

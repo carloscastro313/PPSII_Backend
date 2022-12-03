@@ -148,6 +148,7 @@ export async function agregarNotasAAlumno(
 ): Promise<Response> {
   var idAlumnoMateria = req.body.idAlumnoMateria;
   var notas = req.body.notas;
+  var aprobarCursada = req.body.aprobarCursada;
 
   try {
     const db = await getInstanceDB();
@@ -178,7 +179,7 @@ export async function agregarNotasAAlumno(
       notas.NotaRecuperatorioSegundoParcial2;
 
     alumnoMateria.IdEstadoAcademico =
-      estadoAlumnoMateriaSegunNotas(alumnoMateria);
+      estadoAlumnoMateriaSegunNotas(alumnoMateria,aprobarCursada);
 
     if (
       alumnoMateria.IdEstadoAcademico == EstadosAlumnoMateria.MateriaAprobada ||
@@ -229,9 +230,11 @@ export async function agregarNotaFinalAAlumno(
   req: Request,
   res: Response
 ): Promise<Response> {
+
   var idExamenFinalAlumno = req.body.idExamenFinalAlumno;
   var idAlumnoMateria = req.body.idAlumnoMateria;
   var nota = req.body.nota;
+
   var date = new Date();
 
   try {
@@ -308,7 +311,26 @@ export async function agregarNotaFinalAAlumno(
   }
 }
 
-function estadoAlumnoMateriaSegunNotas(alumnoMateria: AlumnoMaterias): number {
+export async function desaprobarAlumno(req: Request,res: Response): Promise<Response> {
+    try{
+        var idAlumnoMateria = req.params.idAlumnoMateria;
+
+        const db = await getInstanceDB();
+
+        await db.update<AlumnoMaterias>("AlumnoMaterias",{IdEstadoAcademico: EstadosAlumnoMateria.MateriaDesaprobada},{Id: idAlumnoMateria});
+
+        return res.json({
+            msg: "Alumno desaprobado correctamente.",
+          });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            msg: errorMsg.ERROR_INESPERADO,
+        });
+    }
+}
+
+function estadoAlumnoMateriaSegunNotas(alumnoMateria: AlumnoMaterias,aprobarCursada: boolean): number {
   var cantPrimero = 0;
   var cantSegundo = 0;
 
@@ -359,12 +381,10 @@ function estadoAlumnoMateriaSegunNotas(alumnoMateria: AlumnoMaterias): number {
     return EstadosAlumnoMateria.MateriaDesaprobada;
   }
 
-  if (
-    notaMasAltaPrimerParcial >= 4 &&
+  if ((notaMasAltaPrimerParcial >= 4 &&
     notaMasAltaPrimerParcial < 6 &&
     notaMasAltaSegundoParcial >= 4 &&
-    notaMasAltaSegundoParcial < 6
-  ) {
+    notaMasAltaSegundoParcial < 6) && aprobarCursada) {
     return EstadosAlumnoMateria.CursadaAprobada;
   }
 
