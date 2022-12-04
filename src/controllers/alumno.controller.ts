@@ -256,10 +256,11 @@ export async function getInscripcionMateria(req: Request, res: Response) {
     await db.transaction(async (t) => {
       for (let i = 0; i < materiasValidas.length; i++) {
         const aux = await t.query(
-          "select md.Id as Id, ma.Descripcion as Descripcion, cr.Dia as Dia ,tu.Descripcion as Turno, fh.Descripcion as FranjaHoraria from MateriaDivision md inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria inner join Materia ma on ma.Id = pem.IdMateria inner join cronograma cr on cr.Id = md.IdCronograma inner join Turno tu on tu.Id inner join FranjaHoraria fh on fh.Id = cr.IdFranjaHoraria where pem.Id = ?",
+          "select md.Id as Id, ma.Descripcion as Descripcion, cr.Dia as Dia ,tu.Descripcion as Turno, fh.Descripcion as FranjaHoraria from MateriaDivision md inner join DocenteMaterias dm on dm.IdMateriaDivision = md.Id  inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria inner join Materia ma on ma.Id = pem.IdMateria inner join cronograma cr on cr.Id = md.IdCronograma inner join Turno tu on tu.Id = cr.IdTurno inner join FranjaHoraria fh on fh.Id = cr.IdFranjaHoraria where pem.Id = ?",
           [materiasValidas[i]]
         );
-        materiasDivisiones = [...materiasDivisiones, ...aux];
+        if (aux.length > 0)
+          materiasDivisiones = [...materiasDivisiones, ...aux];
       }
     });
 
@@ -415,7 +416,17 @@ export async function getEstadoAcademico(req: Request, res: Response) {
 
     const estadoAcademico = await db.query(
       `
-    select ma.Descripcion as Nombre, IFNULL(ea.Descripcion,'No cursada') as Estado, IFNULL(am.Notafinal,'-') as Notafinal, pem.Cuatrimestre as Cuatrimestre from AlumnoCarrera ac
+    select distinct
+    ma.Descripcion as Nombre, 
+    IFNULL(ea.Descripcion,'No cursada') as Estado, 
+    CASE
+      WHEN am.Notafinal IS NULL THEN '-'
+      WHEN am.Notafinal = 0 THEN '-'
+      ELSE am.Notafinal
+    END as Notafinal,
+    pem.Cuatrimestre as Cuatrimestre, 
+    am.IdEstadoAcademico as IdEstadoAcademico 
+    from AlumnoCarrera ac
     inner join Carrera ca on ca.Id = ac.IdCarrera
     inner join PlanEstudio pe on pe.Nombre = ca.PlanActual
     inner join PlanEstudioMateria pem on pem.IdPlan = pe.Id
@@ -428,13 +439,33 @@ export async function getEstadoAcademico(req: Request, res: Response) {
       [id, id]
     );
 
-    return res.json(estadoAcademico);
+    return res.json(filtrarAprobados(estadoAcademico));
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
     });
   }
+}
+
+function filtrarAprobados(arr: any[]) {
+  const filtrarAprobados = arr
+    .filter(
+      (value) =>
+        value.IdEstadoAcademico === EstadosAlumnoMateria.MateriaAprobada ||
+        value.IdEstadoAcademico === EstadosAlumnoMateria.CursadaAprobada ||
+        value.IdEstadoAcademico === EstadosAlumnoMateria.CursadaRegular
+    )
+    .map((value) => value.Nombre);
+
+  return arr.filter((value) => {
+    return (
+      !filtrarAprobados.includes(value.Nombre) ||
+      value.IdEstadoAcademico === EstadosAlumnoMateria.MateriaAprobada ||
+      value.IdEstadoAcademico === EstadosAlumnoMateria.CursadaRegular ||
+      value.IdEstadoAcademico === EstadosAlumnoMateria.CursadaAprobada
+    );
+  });
 }
 
 export async function getExamenesAnotados(req: Request, res: Response) {
@@ -454,9 +485,9 @@ export async function getExamenesAnotados(req: Request, res: Response) {
       inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria
       inner join Materia ma on ma.Id = pem.IdMateria
       inner join Cronograma cr on cr.Id = md.IdCronograma
-      where efa.Nota = -1
+      where efa.Nota = -1 and am.IdAlumno = ? 
     `,
-      [id, id]
+      [id]
     );
 
     return res.json(transformFinalesPendiente(finalesPendiente));
@@ -763,12 +794,14 @@ export async function getFinalesDisponible(req: Request, res: Response) {
           inner join DocenteMaterias dm on dm.Id = ef.IdDocenteMaterias
           inner join MateriaDivision md on md.Id = dm.IdMateriaDivision
           inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria
+          inner join PlanEstudio pe on pe.Id = pem.IdPlan 
           inner join Materia ma on ma.Id = pem.IdMateria 
           inner join Cronograma cr on ef.IdCronograma = cr.Id
-          where pem.Id = ? and ef.Fecha > ?
+          where ma.Id = ? and pe.Nombre = ? and ef.Fecha > ?
           `,
           [
             materiasValidas[i],
+            arrCarrera[0].PlanActual,
             instanciaInscripciones[0].FechaFinal || new Date(),
           ]
         );
@@ -843,7 +876,7 @@ function getFinalMateria(
       if (!compareArrs(correlativasIds, alumnoMateriaIds)) continue;
     }
 
-    arr.push(arrMaterias[i].IdPlanEstudioMateria);
+    arr.push(arrMaterias[i].Id);
   }
 
   return arr;

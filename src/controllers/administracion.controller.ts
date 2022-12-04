@@ -113,15 +113,32 @@ export async function createInstanciaInscripcion(
       });
     }
 
-    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE TipoUsuario != ?",[TiposUsuario.Administracion]);
-    var usuariosMails = usuarios.map(
-      ({ Mail }) => Mail as string
+    var usuarios = await db.query<Usuario>(
+      "SELECT * FROM Usuarios WHERE TipoUsuario != ?",
+      [TiposUsuario.Administracion]
     );
-    
-    if(TiposInstanciaInscripciones.Finales){
-      await mandarMail(usuariosMails,"NUEVA INSTANCIA DE INSCRIPCION A FINALES","Se genero una instancia de inscripcion a finales, del "+newInstanciaInscripcion.FechaInicio+" hasta el "+newInstanciaInscripcion.FechaFinal,"");
-    }else{
-      await mandarMail(usuariosMails,"NUEVA INSTANCIA DE INSCRIPCION A MATERIAS","Se genero una instancia de inscripcion a materias, del "+newInstanciaInscripcion.FechaInicio+" hasta el "+newInstanciaInscripcion.FechaFinal,"");
+    var usuariosMails = usuarios.map(({ Mail }) => Mail as string);
+
+    if (TiposInstanciaInscripciones.Finales) {
+      await mandarMail(
+        usuariosMails,
+        "NUEVA INSTANCIA DE INSCRIPCION A FINALES",
+        "Se genero una instancia de inscripcion a finales, del " +
+          newInstanciaInscripcion.FechaInicio +
+          " hasta el " +
+          newInstanciaInscripcion.FechaFinal,
+        ""
+      );
+    } else {
+      await mandarMail(
+        usuariosMails,
+        "NUEVA INSTANCIA DE INSCRIPCION A MATERIAS",
+        "Se genero una instancia de inscripcion a materias, del " +
+          newInstanciaInscripcion.FechaInicio +
+          " hasta el " +
+          newInstanciaInscripcion.FechaFinal,
+        ""
+      );
     }
 
     await db.insert("InstanciaInscripcion", { ...newInstanciaInscripcion });
@@ -157,12 +174,18 @@ export async function createCarrera(
 
     await db.insert("Carrera", { ...newCarrera });
 
-    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE TipoUsuario = ? OR TipoUsuario = ?",[TiposUsuario.Administracion,TiposUsuario.Secretaria]);
-    var usuariosMails = usuarios.map(
-      ({ Mail }) => Mail as string
+    var usuarios = await db.query<Usuario>(
+      "SELECT * FROM Usuarios WHERE TipoUsuario = ? OR TipoUsuario = ?",
+      [TiposUsuario.Administracion, TiposUsuario.Secretaria]
     );
+    var usuariosMails = usuarios.map(({ Mail }) => Mail as string);
 
-    await mandarMail(usuariosMails,"NUEVA CARRERA CREADA","Se creo una nueva carrera: "+newCarrera.Descripcion,"");
+    await mandarMail(
+      usuariosMails,
+      "NUEVA CARRERA CREADA",
+      "Se creo una nueva carrera: " + newCarrera.Descripcion,
+      ""
+    );
 
     return res.json(newCarrera);
   } catch (error) {
@@ -261,13 +284,23 @@ export async function createPlanEstudio(
       }
     });
 
-    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE TipoUsuario = ? OR TipoUsuario = ?",[TiposUsuario.Administracion,TiposUsuario.Secretaria]);
-    var usuariosMails = usuarios.map(
-      ({ Mail }) => Mail as string
+    var usuarios = await db.query<Usuario>(
+      "SELECT * FROM Usuarios WHERE TipoUsuario = ? OR TipoUsuario = ?",
+      [TiposUsuario.Administracion, TiposUsuario.Secretaria]
     );
-    var carrera = await db.selectOne<Carrera>("Carrera",{Id: newPlanEstudio.Id});
+    var usuariosMails = usuarios.map(({ Mail }) => Mail as string);
+    var carrera = await db.selectOne<Carrera>("Carrera", {
+      Id: newPlanEstudio.IdCarrera,
+    });
 
-    await mandarMail(usuariosMails,"NUEVO PLAN DE ESTUDIO","Se creo un nuevo plan de estudio para la carrera: "+carrera.Descripcion+"","");
+    await mandarMail(
+      usuariosMails,
+      "NUEVO PLAN DE ESTUDIO",
+      "Se creo un nuevo plan de estudio para la carrera: " +
+        carrera.Descripcion +
+        "",
+      ""
+    );
 
     return res.json(newPlanEstudio);
   } catch (error) {
@@ -534,12 +567,18 @@ export async function createMateria(
       });
     });
 
-    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE TipoUsuario = ? OR TipoUsuario = ?",[TiposUsuario.Administracion,TiposUsuario.Secretaria]);
-    var usuariosMails = usuarios.map(
-      ({ Mail }) => Mail as string
+    var usuarios = await db.query<Usuario>(
+      "SELECT * FROM Usuarios WHERE TipoUsuario = ? OR TipoUsuario = ?",
+      [TiposUsuario.Administracion, TiposUsuario.Secretaria]
     );
+    var usuariosMails = usuarios.map(({ Mail }) => Mail as string);
 
-    await mandarMail(usuariosMails,"NUEVA MATERIA CREADA","Se creo una nueva materia: "+newMateria.Descripcion,"");
+    await mandarMail(
+      usuariosMails,
+      "NUEVA MATERIA CREADA",
+      "Se creo una nueva materia: " + newMateria.Descripcion,
+      ""
+    );
 
     return res.json(newMateria);
   } catch (error) {
@@ -685,55 +724,110 @@ export async function getFranjaHoraria(
   }
 }
 
-export async function asignarDocenteAMateria(req: Request,res: Response): Promise<Response>{
-  try{
+export async function asignarDocenteAMateria(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
     const db = await getInstanceDB();
 
     var idDocente = req.body.idDocente;
     var idMateriaDivision = req.body.idMateriaDivision;
 
-    var materiaDivisionActual = await db.selectOne<MateriaDivision>("MateriaDivision",{Id: idMateriaDivision});
-    var cronogramaMateriaDivisionActual = await db.selectOne<Cronograma>("Cronograma",{Id: materiaDivisionActual.IdCronograma});
-    var docenteMaterias = await db.select<DocenteMaterias>("DocenteMaterias",{IdDocente: idDocente});
-
+    var materiaDivisionActual = await db.selectOne<MateriaDivision>(
+      "MateriaDivision",
+      { Id: idMateriaDivision }
+    );
+    var cronogramaMateriaDivisionActual = await db.selectOne<Cronograma>(
+      "Cronograma",
+      { Id: materiaDivisionActual.IdCronograma }
+    );
+    // var docenteMaterias = await db.select<DocenteMaterias>("DocenteMaterias",{IdDocente: idDocente});
+    var docenteMaterias = await db.query<DocenteMaterias>(
+      `
+      select dm.Id as Id, dm.IdDocente as IdDocente, dm.IdMateriaDivision as IdMateriaDivision from DocenteMaterias dm 
+      inner join MateriaDivision md on md.Id = dm.IdMateriaDivision 
+      inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria 
+      inner join PlanEstudio pe on pe.Id = pem.IdPlan 
+      inner join Carrera ca on ca.PlanActual = pe.Nombre 
+      where dm.IdDocente = ? 
+    `,
+      [idDocente]
+    );
     for (let i = 0; i < docenteMaterias.length; i++) {
+      var materiasDivisionDocente = await db.selectOne<MateriaDivision>(
+        "MateriaDivision",
+        { Id: docenteMaterias[i].IdMateriaDivision }
+      );
+      var cronogramaParaMateria = await db.selectOne<Cronograma>("Cronograma", {
+        Id: materiasDivisionDocente.IdCronograma,
+      });
 
-      var materiasDivisionDocente = await db.selectOne<MateriaDivision>("MateriaDivision",{Id: docenteMaterias[i].IdMateriaDivision});
-      var cronogramaParaMateria = await db.selectOne<Cronograma>("Cronograma",{Id: materiasDivisionDocente.IdCronograma});
-
-      if(!franjaHorariaValida(cronogramaMateriaDivisionActual, cronogramaParaMateria))
-      {
+      if (
+        !franjaHorariaValida(
+          cronogramaMateriaDivisionActual,
+          cronogramaParaMateria
+        )
+      ) {
         return res.status(400).json({
-          msg: errorMsg.ERROR_DOCENTE_NO_DISPONIBLE_EN_CRONOGRAMA
+          msg: errorMsg.ERROR_DOCENTE_NO_DISPONIBLE_EN_CRONOGRAMA,
         });
       }
     }
 
-    var docenteConMismaDivision = await db.select<DocenteMaterias>("DocenteMaterias",{IdMateriaDivision: idMateriaDivision});
-    
-    //MODIFICAR DOCENTE DE MATERIA
-    if(docenteConMismaDivision.length != 0){
-      await db.delete<DocenteMaterias>("DocenteMaterias",{IdMateriaDivision: idMateriaDivision});
-    }
-
-    var newDocenteMateria : DocenteMaterias = { IdDocente : idDocente, IdMateriaDivision: idMateriaDivision}
-
-    await db.insert<DocenteMaterias>("DocenteMaterias",newDocenteMateria);
-
-    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE Id = ?",[idDocente]);
-    var usuariosMails = usuarios.map(
-      ({ Mail }) => Mail as string
+    var docenteConMismaDivision = await db.select<DocenteMaterias>(
+      "DocenteMaterias",
+      { IdMateriaDivision: idMateriaDivision }
     );
 
-    var planEstudioMateria = await db.selectOne<PlanEstudioMateria>("PlanEstudioMateria",{Id:materiaDivisionActual.IdPlanEstudioMateria});
-    var materia = await db.selectOne<Materia>("Materia",{Id:planEstudioMateria.IdMateria});
+    //MODIFICAR DOCENTE DE MATERIA
+    if (docenteConMismaDivision.length != 0) {
+      await db.delete<DocenteMaterias>("DocenteMaterias", {
+        IdMateriaDivision: idMateriaDivision,
+      });
+    }
 
-    await mandarMail(usuariosMails,"NUEVA MATERIA ASIGNADA","Se le asigno una nueva materia: "+materia.Descripcion+". Para la division: "+materiaDivisionActual.Division+", los dias: "+cronogramaMateriaDivisionActual.Dia+", la franja horaria: "+mapFranjaHoraria(cronogramaMateriaDivisionActual.IdFranjaHoraria)+", en el turno: "+mapTurno(cronogramaMateriaDivisionActual.IdTurno),"");
+    var newDocenteMateria: DocenteMaterias = {
+      IdDocente: idDocente,
+      IdMateriaDivision: idMateriaDivision,
+    };
+
+    await db.insert<DocenteMaterias>("DocenteMaterias", newDocenteMateria);
+
+    var usuarios = await db.query<Usuario>(
+      "SELECT * FROM Usuarios WHERE Id = ?",
+      [idDocente]
+    );
+    var usuariosMails = usuarios.map(({ Mail }) => Mail as string);
+
+    var planEstudioMateria = await db.selectOne<PlanEstudioMateria>(
+      "PlanEstudioMateria",
+      { Id: materiaDivisionActual.IdPlanEstudioMateria }
+    );
+    var materia = await db.selectOne<Materia>("Materia", {
+      Id: planEstudioMateria.IdMateria,
+    });
+
+    await mandarMail(
+      usuariosMails,
+      "NUEVA MATERIA ASIGNADA",
+      "Se le asigno una nueva materia: " +
+        materia.Descripcion +
+        ". Para la division: " +
+        materiaDivisionActual.Division +
+        ", los dias: " +
+        cronogramaMateriaDivisionActual.Dia +
+        ", la franja horaria: " +
+        mapFranjaHoraria(cronogramaMateriaDivisionActual.IdFranjaHoraria) +
+        ", en el turno: " +
+        mapTurno(cronogramaMateriaDivisionActual.IdTurno),
+      ""
+    );
 
     return res.json({
-      msg: "Docente asignado a la materia de la division correctamente"
+      msg: "Docente asignado a la materia de la division correctamente",
     });
-  }catch(error){
+  } catch (error) {
     console.log(error);
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
@@ -741,17 +835,25 @@ export async function asignarDocenteAMateria(req: Request,res: Response): Promis
   }
 }
 
-function franjaHorariaValida(cronogramaActual : Cronograma, cronogramaDocente : Cronograma){
-
-  if(cronogramaActual.Dia != cronogramaDocente.Dia || cronogramaActual.IdTurno != cronogramaDocente.IdTurno)
+function franjaHorariaValida(
+  cronogramaActual: Cronograma,
+  cronogramaDocente: Cronograma
+) {
+  if (
+    cronogramaActual.Dia != cronogramaDocente.Dia ||
+    cronogramaActual.IdTurno != cronogramaDocente.IdTurno
+  )
     return true;
 
-  if(cronogramaActual.IdFranjaHoraria == FranjasHorarias.BloqueCompleto || cronogramaDocente.IdFranjaHoraria == FranjasHorarias.BloqueCompleto ||  cronogramaActual.IdFranjaHoraria == cronogramaDocente.IdFranjaHoraria)
+  if (
+    cronogramaActual.IdFranjaHoraria == FranjasHorarias.BloqueCompleto ||
+    cronogramaDocente.IdFranjaHoraria == FranjasHorarias.BloqueCompleto ||
+    cronogramaActual.IdFranjaHoraria == cronogramaDocente.IdFranjaHoraria
+  )
     return false;
 
   return true;
 }
-
 
 export async function getCronogramaDocente(
   req: Request,
@@ -796,13 +898,15 @@ export async function getCronogramaDocente(
             Id: materiaDiv[j].IdCronograma,
           }
         );
-          var Docente = null;
+        var Docente = null;
         const id = materiaDiv[j].Id || -1;
-        
-        var resultDocente = await db.query("select * from DocenteMaterias dm inner join usuarios u on u.Id = dm.IdDocente where dm.IdMateriaDivision = ? limit 1",[id]);
 
-        if(resultDocente.length > 0)
-          Docente = resultDocente[0];
+        var resultDocente = await db.query(
+          "select * from DocenteMaterias dm inner join usuarios u on u.Id = dm.IdDocente where dm.IdMateriaDivision = ? limit 1",
+          [id]
+        );
+
+        if (resultDocente.length > 0) Docente = resultDocente[0];
 
         var turno = mapTurno(cronograma.IdTurno);
         var franjaHoraria = mapFranjaHoraria(cronograma.IdFranjaHoraria);
@@ -819,7 +923,7 @@ export async function getCronogramaDocente(
           FranjaHoraria: franjaHoraria,
           IdFranjaHoraria: cronograma.IdFranjaHoraria,
           Dia: cronograma.Dia,
-          Docente
+          Docente,
         });
       }
     }
@@ -833,7 +937,6 @@ export async function getCronogramaDocente(
   }
 }
 
-
 export async function createInstanciaFinal(
   req: Request,
   res: Response
@@ -842,7 +945,15 @@ export async function createInstanciaFinal(
   const fechaInicioPrimera = req.body.primeraSemana;
   const fechaInicioSegunda = req.body.segundaSemana;
 
-  const weekday = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const weekday = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
 
   try {
     const db = await getInstanceDB();
@@ -851,7 +962,11 @@ export async function createInstanciaFinal(
 
     const instanciaInscripciones = await db.query(
       "SELECT * FROM InstanciaInscripcion WHERE FechaInicio <= ? AND FechaFinal >= ? AND IdTipo = ?",
-      [now.toISOString(),now.toISOString(),newInstanciaInscripcion.IdTipo.toString()]
+      [
+        now.toISOString(),
+        now.toISOString(),
+        newInstanciaInscripcion.IdTipo.toString(),
+      ]
     );
 
     if (instanciaInscripciones.length != 0) {
@@ -862,7 +977,9 @@ export async function createInstanciaFinal(
 
     await db.insert("InstanciaInscripcion", { ...newInstanciaInscripcion });
 
-    const divisionDocente = await db.query("select cr.Id as IdCronograma, dm.Id as IdDocenteMaterias, cr.Dia as Dia from MateriaDivision md inner join DocenteMaterias dm on md.Id = dm.IdMateriaDivision inner join Cronograma cr on cr.Id = md.IdCronograma");
+    const divisionDocente = await db.query(
+      "select cr.Id as IdCronograma, dm.Id as IdDocenteMaterias, cr.Dia as Dia from MateriaDivision md inner join DocenteMaterias dm on md.Id = dm.IdMateriaDivision inner join Cronograma cr on cr.Id = md.IdCronograma"
+    );
 
     const fecha1 = new Date(fechaInicioPrimera);
     const fecha2 = new Date(fechaInicioSegunda);
@@ -870,23 +987,29 @@ export async function createInstanciaFinal(
     const primeraSemana = getFechas(fecha1);
     const segundaSemana = getFechas(fecha2);
 
-    let finales: any[]= [];
+    let finales: any[] = [];
 
     finales = [...finales, generarExamenFinal(divisionDocente, primeraSemana)];
     finales = [...finales, generarExamenFinal(divisionDocente, segundaSemana)];
 
     for (let i = 0; i < finales.length; i++) {
-      await db.insert<ExamenFinal>("ExamenFinal",finales[i]);
+      await db.insert<ExamenFinal>("ExamenFinal", finales[i]);
     }
 
     var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios");
-    var usuariosMails = usuarios.map(
-      ({ Mail }) => Mail as string
+    var usuariosMails = usuarios.map(({ Mail }) => Mail as string);
+
+    await mandarMail(
+      usuariosMails,
+      "NUEVA INSTANCIA DE INSCRIPCION A FINALES",
+      "Se creo una nueva instancia de inscripcion a finales, desde el: " +
+        newInstanciaInscripcion.FechaInicio +
+        ", hasta el: " +
+        newInstanciaInscripcion.FechaFinal,
+      ""
     );
 
-    await mandarMail(usuariosMails,"NUEVA INSTANCIA DE INSCRIPCION A FINALES","Se creo una nueva instancia de inscripcion a finales, desde el: "+newInstanciaInscripcion.FechaInicio+", hasta el: "+newInstanciaInscripcion.FechaFinal,"");
-
-    return res.json({newInstanciaInscripcion, finales});
+    return res.json({ newInstanciaInscripcion, finales });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -895,38 +1018,68 @@ export async function createInstanciaFinal(
   }
 }
 
-
-function getFechas(fecha: Date){
+function getFechas(fecha: Date) {
   const fechas = [];
-  const weekday = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  
+  const weekday = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
   for (let i = 0; i < 7; i++) {
     const aux = new Date(fecha);
     aux.setDate(aux.getDate() + i);
 
-    if(weekday[aux.getUTCDay()] != "Sunday")
-      fechas.push(aux)
+    if (weekday[aux.getUTCDay()] != "Sunday") fechas.push(aux);
   }
 
   return fechas;
 }
 
-function generarExamenFinal(divisiones: any[], arrFecha: Date[]){
+function generarExamenFinal(divisiones: any[], arrFecha: Date[]) {
   let arr: any[] = [];
-  const weekday = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
+  const weekday = [
+    "Domingo",
+    "Lunes",
+    "Martes",
+    "Miercoles",
+    "Jueves",
+    "Viernes",
+    "Sabado",
+  ];
 
   for (let i = 0; i < arrFecha.length; i++) {
     let strAux = weekday[arrFecha[i].getUTCDay()];
-    
-    const arrDivisiones = divisiones.filter((value : any) => value.Dia === strAux);
 
-    arr = [...arr, ...arrDivisiones.map((value: any) =>{ return {IdCronograma: value.IdCronograma, IdDocenteMaterias: value.IdDocenteMaterias, Fecha: `${arrFecha[i].getUTCFullYear()}-${arrFecha[i].getUTCMonth() + 1}-${arrFecha[i].getUTCDate()} 00:00:00.000`}})]
+    const arrDivisiones = divisiones.filter(
+      (value: any) => value.Dia === strAux
+    );
+
+    arr = [
+      ...arr,
+      ...arrDivisiones.map((value: any) => {
+        return {
+          IdCronograma: value.IdCronograma,
+          IdDocenteMaterias: value.IdDocenteMaterias,
+          Fecha: `${arrFecha[i].getUTCFullYear()}-${
+            arrFecha[i].getUTCMonth() + 1
+          }-${arrFecha[i].getUTCDate()} 00:00:00.000`,
+        };
+      }),
+    ];
   }
 
   return arr;
 }
 
-export async function checkCanCreateInstancia(req: Request,res: Response): Promise<Response> {
+export async function checkCanCreateInstancia(
+  req: Request,
+  res: Response
+): Promise<Response> {
   const idTipoInstancia = req.params.idTipoInstancia;
 
   const now = new Date();
@@ -937,14 +1090,17 @@ export async function checkCanCreateInstancia(req: Request,res: Response): Promi
   console.log(idTipoInstancia);
 
   try {
-    const instanciasProximas = await db.query("SELECT * FROM InstanciaInscripcion WHERE IdTipo = ? AND FechaInicio > ? AND FechaFinal > ?",[idTipoInstancia,now.toISOString(),now.toISOString()]);
-    
-    if(instanciasProximas.length > 0){
+    const instanciasProximas = await db.query(
+      "SELECT * FROM InstanciaInscripcion WHERE IdTipo = ? AND FechaInicio > ? AND FechaFinal > ?",
+      [idTipoInstancia, now.toISOString(), now.toISOString()]
+    );
+
+    if (instanciasProximas.length > 0) {
       return res.json(false);
     }
-  
+
     return res.json(true);
-  }catch(error){
+  } catch (error) {
     console.log(error);
     return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
@@ -952,39 +1108,50 @@ export async function checkCanCreateInstancia(req: Request,res: Response): Promi
   }
 }
 
-export async function traerGruposDePersonas(req: Request, res: Response): Promise<Response>{
+export async function traerGruposDePersonas(
+  req: Request,
+  res: Response
+): Promise<Response> {
   var response = [];
 
-  try{
-      const db = await getInstanceDB();
+  try {
+    const db = await getInstanceDB();
 
-      var administraciones = await db.select<Usuario>("Usuarios",{TipoUsuario: TiposUsuario.Administracion});
-      var secretarias = await db.select<Usuario>("Usuarios",{TipoUsuario: TiposUsuario.Secretaria});
-      var docentes = await db.select<Usuario>("Usuarios",{TipoUsuario: TiposUsuario.Docente});
-      var alumnos = await db.select<Usuario>("Usuarios",{TipoUsuario: TiposUsuario.Alumno});
+    var administraciones = await db.select<Usuario>("Usuarios", {
+      TipoUsuario: TiposUsuario.Administracion,
+    });
+    var secretarias = await db.select<Usuario>("Usuarios", {
+      TipoUsuario: TiposUsuario.Secretaria,
+    });
+    var docentes = await db.select<Usuario>("Usuarios", {
+      TipoUsuario: TiposUsuario.Docente,
+    });
+    var alumnos = await db.select<Usuario>("Usuarios", {
+      TipoUsuario: TiposUsuario.Alumno,
+    });
 
-      console.log("secretarias");
-      console.log(secretarias);
+    console.log("secretarias");
+    console.log(secretarias);
 
-      var adminIds = administraciones.map(({ Id }) => Id as number);
-      var secretariasIds = secretarias.map(({ Id }) => Id as number);
-      var docentesIds = docentes.map(({ Id }) => Id as number);
-      var todosLosAlumnosIds = alumnos.map(({ Id }) => Id as number);
+    var adminIds = administraciones.map(({ Id }) => Id as number);
+    var secretariasIds = secretarias.map(({ Id }) => Id as number);
+    var docentesIds = docentes.map(({ Id }) => Id as number);
+    var todosLosAlumnosIds = alumnos.map(({ Id }) => Id as number);
 
-      response.push({
-          Administracion: adminIds,
-          Secretaria: secretariasIds,
-          Docentes: docentesIds,
-          TodosLosAlumnos: todosLosAlumnosIds,
-      });
+    response.push({
+      Administracion: adminIds,
+      Secretaria: secretariasIds,
+      Docentes: docentesIds,
+      TodosLosAlumnos: todosLosAlumnosIds,
+    });
 
-      console.log(response);
+    console.log(response);
 
-      return res.json(response);
+    return res.json(response);
   } catch (error) {
-      console.log(error);
-      return res.status(500).json({
+    console.log(error);
+    return res.status(500).json({
       msg: errorMsg.ERROR_INESPERADO,
-      });
+    });
   }
 }
