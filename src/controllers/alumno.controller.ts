@@ -414,30 +414,53 @@ export async function getEstadoAcademico(req: Request, res: Response) {
   try {
     const db = await getInstanceDB();
 
-    const estadoAcademico = await db.query(
+    let estadoAcademico: any[] = [];
+
+    const alumnoMaterias = await db.query(
+      `
+      select 
+      ma.Descripcion as Nombre, 
+      IFNULL(ea.Descripcion,'No cursada') as Estado, 
+      CASE
+        WHEN am.Notafinal IS NULL THEN '-'
+        WHEN am.Notafinal = 0 THEN '-'
+        ELSE am.Notafinal
+      END as Notafinal,
+      pem.Cuatrimestre as Cuatrimestre, 
+      am.IdEstadoAcademico as IdEstadoAcademico 
+      from AlumnoMaterias am
+      inner join EstadoAcademico ea on ea.Id = am.IdEstadoAcademico
+      inner join MateriaDivision md on am.IdMateriaDivision = md.Id
+      inner join PlanEstudioMateria pem on md.IdPlanEstudioMateria = pem.Id
+      inner join Materia ma on ma.Id = pem.IdMateria
+      where am.IdAlumno = ? and (am.IdEstadoAcademico = ? or am.IdEstadoAcademico = ? or am.IdEstadoAcademico = ?) 
+      `,
+      [
+        id,
+        EstadosAlumnoMateria.CursadaAprobada,
+        EstadosAlumnoMateria.CursadaRegular,
+        EstadosAlumnoMateria.MateriaAprobada,
+      ]
+    );
+
+    const materiasCarrera = await db.query(
       `
     select distinct
     ma.Descripcion as Nombre, 
-    IFNULL(ea.Descripcion,'No cursada') as Estado, 
-    CASE
-      WHEN am.Notafinal IS NULL THEN '-'
-      WHEN am.Notafinal = 0 THEN '-'
-      ELSE am.Notafinal
-    END as Notafinal,
-    pem.Cuatrimestre as Cuatrimestre, 
-    am.IdEstadoAcademico as IdEstadoAcademico 
+    'No cursada' as Estado, 
+    '-' as  Notafinal,
+    pem.Cuatrimestre as Cuatrimestre
     from AlumnoCarrera ac
     inner join Carrera ca on ca.Id = ac.IdCarrera
     inner join PlanEstudio pe on pe.Nombre = ca.PlanActual
     inner join PlanEstudioMateria pem on pem.IdPlan = pe.Id
     inner join Materia ma on ma.Id = pem.IdMateria
-    left join MateriaDivision md on md.IdPlanEstudioMateria = pem.Id
-    left join AlumnoMaterias am on am.IdMateriaDivision = md.Id and am.IdAlumno = ?
-    left join EstadoAcademico ea on am.IdEstadoAcademico is not null and am.IdEstadoAcademico = ea.Id
     where ac.IdAlumno = ? 
     `,
       [id, id]
     );
+
+    estadoAcademico = [...alumnoMaterias, ...materiasCarrera];
 
     return res.json(filtrarAprobados(estadoAcademico));
   } catch (error) {
