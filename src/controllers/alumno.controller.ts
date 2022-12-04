@@ -351,12 +351,18 @@ export async function inscribirAlumnoMateria(req: Request, res: Response) {
       IdEstadoAcademico: EstadosAlumnoMateria.CursadaRegular,
     });
 
-    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE Id = ?",[IdAlumno]);
-    var usuariosMails = usuarios.map(
-      ({ Mail }) => Mail as string
+    var usuarios = await db.query<Usuario>(
+      "SELECT * FROM Usuarios WHERE Id = ?",
+      [IdAlumno]
     );
+    var usuariosMails = usuarios.map(({ Mail }) => Mail as string);
 
-    await mandarMail(usuariosMails,"FUISTE INSCRIPTO A UNA MATERIA","Se te inscribio correctamente a la materia: "+materia.Descripcion,"");
+    await mandarMail(
+      usuariosMails,
+      "FUISTE INSCRIPTO A UNA MATERIA",
+      "Se te inscribio correctamente a la materia: " + materia.Descripcion,
+      ""
+    );
 
     return res.json({
       msg: "El alumno se a inscribio con exito a la materia",
@@ -440,7 +446,7 @@ export async function getExamenesAnotados(req: Request, res: Response) {
 
     const finalesPendiente = await db.query(
       `
-      select ef.Fecha as Fecha, ma.Descripcion as Materia, cr.IdTurno as Turno, cr.IdFranjaHoraria as FranjaHoraria from AlumnoMaterias am
+      select ma.Descripcion as Materia, ef.Fecha as Fecha, cr.IdTurno as Turno, cr.IdFranjaHoraria as FranjaHoraria from AlumnoMaterias am
       inner join ExamenFinalAlumno efa on efa.IdAlumnoMateria = am.Id
       inner join ExamenFinal ef on ef.Id = efa.IdExamenFinal
       inner join DocenteMaterias dm on dm.Id = ef.IdDocenteMaterias
@@ -532,48 +538,112 @@ const getNoche = (IdFranjaHoraria: number) => {
 export async function getNotasMaterias(req: Request, res: Response) {
   const bearerToken = req.header("authorization") as string;
   const { id } = getTokenId(bearerToken);
-  var materiasConNotas = [];
+  // var materiasConNotas = [];
 
   try {
     const db = await getInstanceDB();
 
-    var alumnoMaterias = await db.select<AlumnoMaterias>("AlumnoMaterias", {
-      IdAlumno: id,
+    var alumnoMaterias: any[] = await db.query(
+      `
+    select 
+    ma.Id as IdMateria,
+    ma.Descripcion as Descripcion,  
+    am.NotaPrimerParcial as NotaPrimerParcial,
+    am.NotaSegundoParcial as NotaSegundoParcial,  
+    am.NotaRecuperatorioPrimerParcial as NotaRecuperatorioPrimerParcial,  
+    am.NotaRecuperatorioPrimerParcial2 as NotaRecuperatorioPrimerParcial2,  
+    am.NotaRecuperatorioSegundoParcial as NotaRecuperatorioSegundoParcial,  
+    am.NotaRecuperatorioSegundoParcial2 as NotaRecuperatorioSegundoParcial2,  
+    am.NotaFinal as NotaFinal,  
+    ea.Descripcion as Estado  
+    from AlumnoMaterias am 
+    inner join EstadoAcademico ea on am.IdEstadoAcademico = ea.Id
+    inner join MateriaDIvision md on am.IdMateriaDivision = md.Id
+    inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria
+    inner join Materia ma on ma.Id = pem.IdMateria
+    where am.IdAlumno = ? and am.IdEstadoAcademico != ?
+    `,
+      [id, EstadosAlumnoMateria.MateriaDesaprobada]
+    );
+
+    // for (let i = 0; i < alumnoMaterias.length; i++) {
+    //   var materia = await db.selectOne<Materia>("Materia", {
+    //     Id: alumnoMaterias[i].IdMateria,
+    //   });
+
+    //   var estadoAcademico = mapEstadosAlumnoMateria(
+    //     alumnoMaterias[i].IdEstadoAcademico
+    //   );
+
+    //   if (
+    //     alumnoMaterias[i].IdEstadoAcademico !=
+    //     EstadosAlumnoMateria.MateriaDesaprobada
+    //   ) {
+    //     materiasConNotas.push({
+    //       IdMateria: materia.Id,
+    //       Nombre: materia.Descripcion,
+    //       NotaPrimerParcial: alumnoMaterias[i].NotaPrimerParcial,
+    //       NotaSegundoParcial: alumnoMaterias[i].NotaSegundoParcial,
+    //       NotaRecuperatorioPrimerParcial:
+    //         alumnoMaterias[i].NotaRecuperatorioPrimerParcial,
+    //       NotaRecuperatorioSegundoParcial:
+    //         alumnoMaterias[i].NotaRecuperatorioSegundoParcial,
+    //       NotaRecuperatorioPrimerParcial2:
+    //         alumnoMaterias[i].NotaRecuperatorioPrimerParcial2,
+    //       NotaRecuperatorioSegundoParcial2:
+    //         alumnoMaterias[i].NotaRecuperatorioSegundoParcial2,
+    //       NotaFinal: alumnoMaterias[i].NotaFinal,
+    //       EstadoAcademico: estadoAcademico,
+    //     });
+    //   }
+    // }
+
+    let arrNotas: any[] = [];
+
+    alumnoMaterias.forEach((value) => {
+      let {
+        NotaPrimerParcial,
+        NotaSegundoParcial,
+        NotaRecuperatorioPrimerParcial,
+        NotaRecuperatorioPrimerParcial2,
+        NotaRecuperatorioSegundoParcial,
+        NotaRecuperatorioSegundoParcial2,
+        NotaFinal,
+      } = value;
+
+      NotaPrimerParcial = NotaPrimerParcial == 0 ? "-" : NotaPrimerParcial;
+      NotaSegundoParcial = NotaSegundoParcial == 0 ? "-" : NotaSegundoParcial;
+      NotaRecuperatorioPrimerParcial =
+        NotaRecuperatorioPrimerParcial == 0
+          ? "-"
+          : NotaRecuperatorioPrimerParcial;
+      NotaRecuperatorioPrimerParcial2 =
+        NotaRecuperatorioPrimerParcial2 == 0
+          ? "-"
+          : NotaRecuperatorioPrimerParcial2;
+      NotaRecuperatorioSegundoParcial =
+        NotaRecuperatorioSegundoParcial == 0
+          ? "-"
+          : NotaRecuperatorioSegundoParcial;
+      NotaRecuperatorioSegundoParcial2 =
+        NotaRecuperatorioSegundoParcial2 == 0
+          ? "-"
+          : NotaRecuperatorioSegundoParcial2;
+      NotaFinal = NotaFinal == 0 ? "-" : NotaFinal;
+
+      arrNotas.push({
+        ...value,
+        NotaPrimerParcial,
+        NotaSegundoParcial,
+        NotaRecuperatorioPrimerParcial,
+        NotaRecuperatorioPrimerParcial2,
+        NotaRecuperatorioSegundoParcial,
+        NotaRecuperatorioSegundoParcial2,
+        NotaFinal,
+      });
     });
 
-    for (let i = 0; i < alumnoMaterias.length; i++) {
-      var materia = await db.selectOne<Materia>("Materia", {
-        Id: alumnoMaterias[i].IdMateria,
-      });
-
-      var estadoAcademico = mapEstadosAlumnoMateria(
-        alumnoMaterias[i].IdEstadoAcademico
-      );
-
-      if (
-        alumnoMaterias[i].IdEstadoAcademico !=
-        EstadosAlumnoMateria.MateriaDesaprobada
-      ) {
-        materiasConNotas.push({
-          IdMateria: materia.Id,
-          Nombre: materia.Descripcion,
-          NotaPrimerParcial: alumnoMaterias[i].NotaPrimerParcial,
-          NotaSegundoParcial: alumnoMaterias[i].NotaSegundoParcial,
-          NotaRecuperatorioPrimerParcial:
-            alumnoMaterias[i].NotaRecuperatorioPrimerParcial,
-          NotaRecuperatorioSegundoParcial:
-            alumnoMaterias[i].NotaRecuperatorioSegundoParcial,
-          NotaRecuperatorioPrimerParcial2:
-            alumnoMaterias[i].NotaRecuperatorioPrimerParcial2,
-          NotaRecuperatorioSegundoParcial2:
-            alumnoMaterias[i].NotaRecuperatorioSegundoParcial2,
-          NotaFinal: alumnoMaterias[i].NotaFinal,
-          EstadoAcademico: estadoAcademico,
-        });
-      }
-    }
-
-    return res.json(materiasConNotas);
+    return res.json(arrNotas);
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -689,13 +759,13 @@ export async function getFinalesDisponible(req: Request, res: Response) {
       for (let i = 0; i < materiasValidas.length; i++) {
         const aux = await t.query(
           `
-          select md.Id as IdMateriaDivision, ef.Id as IdExamenFinal, ef.Fecha as Fechas, ma.Descripcion as Nombre, cr.IdTurno as Turno, cr.IdFranjaHoraria as FranjaHoraria from ExamenFinal ef
-          inner join DocenteMateria dm on dm.Id = ef.IdDocenteMaterias
+          select md.Id as IdMateriaDivision, ma.Id as IdMateria, ef.Id as IdExamenFinal, ef.Fecha as Fechas, ma.Descripcion as Nombre, cr.IdTurno as Turno, cr.IdFranjaHoraria as FranjaHoraria from ExamenFinal ef
+          inner join DocenteMaterias dm on dm.Id = ef.IdDocenteMaterias
           inner join MateriaDivision md on md.Id = dm.IdMateriaDivision
           inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria
           inner join Materia ma on ma.Id = pem.IdMateria 
           inner join Cronograma cr on ef.IdCronograma = cr.Id
-          where ma.Id = ? and ef.Fecha > ?
+          where pem.Id = ? and ef.Fecha > ?
           `,
           [
             materiasValidas[i],
@@ -705,21 +775,33 @@ export async function getFinalesDisponible(req: Request, res: Response) {
         finalesDisponibles = [...finalesDisponibles, ...aux];
       }
 
-      let examenFinalAlumno: ExamenFinalAlumno[] = [];
+      let examenFinalAlumno: any[] = [];
 
       for (let i = 0; i < alumnoMateriaCursadas.length; i++) {
-        const aux = await db.select<ExamenFinalAlumno>("ExamenFinalAlumno", {
-          IdAlumnoMateria: alumnoMateriaCursadas[i].IdAlumnoMateria,
-          Nota: -1,
-        });
+        // const aux = await db.select<ExamenFinalAlumno>("ExamenFinalAlumno", {
+        //   IdAlumnoMateria: alumnoMateriaCursadas[i].IdAlumnoMateria,
+        //   Nota: -1,
+        // });
+
+        const aux = await db.query(
+          `select ma.Id from ExamenFinalAlumno efa
+          inner join AlumnoMaterias am on am.Id = efa.IdAlumnoMateria
+          inner join MateriaDivision md on md.Id = am.IdMateriaDivision
+          inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria
+          inner join Materia ma on ma.Id = pem.IdMateria
+          where efa.IdAlumnoMateria = ? and Nota = -1`,
+          [alumnoMateriaCursadas[i].IdAlumnoMateria]
+        );
+
+        if (aux.length > 0) examenFinalAlumno = [...examenFinalAlumno, ...aux];
       }
 
       let examenFinalAlumnoIds: number[] = examenFinalAlumno.map(
-        (val) => val.IdExamenFinal as number
+        (val) => val.Id as number
       );
 
       finalesDisponibles = finalesDisponibles.filter(
-        (val) => !examenFinalAlumnoIds.includes(val.Id)
+        (val) => !examenFinalAlumnoIds.includes(val.IdMateria)
       );
     });
 
@@ -751,7 +833,7 @@ function getFinalMateria(
   });
 
   for (let i = 0; i < arrMaterias.length; i++) {
-    if (arrMaterias[i].correlativas != null) {
+    if (arrMaterias[i].correlativas.length > 0) {
       const correlativasIds: number[] = arrMaterias[i].correlativas.map(
         (value: any) => {
           return value.IdCorrelativa;
@@ -761,14 +843,14 @@ function getFinalMateria(
       if (!compareArrs(correlativasIds, alumnoMateriaIds)) continue;
     }
 
-    arr.push(materias[i].IdPlanEstudioMateria);
+    arr.push(arrMaterias[i].IdPlanEstudioMateria);
   }
 
   return arr;
 }
 
 export async function createExamenFinalAlumno(req: Request, res: Response) {
-  const { IdExamenFinal, IdMateriaDivision } = req.body;
+  const { IdExamenFinal, IdMateriaDivision, IdMateria } = req.body;
   const bearerToken = req.header("authorization") as string;
   const { id } = getTokenId(bearerToken);
 
@@ -776,8 +858,12 @@ export async function createExamenFinalAlumno(req: Request, res: Response) {
     const db = await getInstanceDB();
 
     const alumnoMaterias = await db.query<AlumnoMaterias>(
-      "select * from AlumnoMaterias where IdMateriaDivision = ? and IdEstadoAcademico = ?",
-      [IdMateriaDivision, EstadosAlumnoMateria.CursadaAprobada]
+      `select am.Id as Id, am.IdAlumno as IdAlumno, ma.Id as IdMateria from AlumnoMaterias am 
+    inner join MateriaDivision md on md.Id = am.IdMateriaDivision
+    inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria
+    inner join Materia ma on ma.Id = pem.IdMateria
+    where ma.Id = ? and am.IdEstadoAcademico = ?`,
+      [IdMateria, EstadosAlumnoMateria.CursadaAprobada]
     );
 
     if (alumnoMaterias.length == 0) {
@@ -794,16 +880,32 @@ export async function createExamenFinalAlumno(req: Request, res: Response) {
       Nota: -1,
     });
 
-    var usuarios = await db.query<Usuario>("SELECT * FROM Usuarios WHERE Id = ?",[alumnoMaterias[0].IdAlumno]);
-    var usuariosMails = usuarios.map(
-      ({ Mail }) => Mail as string
+    var usuarios = await db.query<Usuario>(
+      "SELECT * FROM Usuarios WHERE Id = ?",
+      [alumnoMaterias[0].IdAlumno]
+    );
+    var usuariosMails = usuarios.map(({ Mail }) => Mail as string);
+
+    var materia = await db.selectOne<Materia>("Materia", {
+      Id: alumnoMaterias[0].IdMateria,
+    });
+    var examenFinal = await db.selectOne<ExamenFinal>("ExamenFinal", {
+      Id: IdExamenFinal,
+    });
+
+    await mandarMail(
+      usuariosMails,
+      "FUISTE INSCRIPTO A UN FINAL",
+      "Se te inscribio correctamente a un final de " +
+        materia.Descripcion +
+        " el dia: " +
+        examenFinal.Fecha,
+      ""
     );
 
-    var materia = await db.selectOne<Materia>("Materia",{Id: alumnoMaterias[0].IdMateria});
-    var examenFinal = await db.selectOne<ExamenFinal>("ExamenFinal",{Id: IdExamenFinal});
-
-    await mandarMail(usuariosMails,"FUISTE INSCRIPTO A UN FINAL","Se te inscribio correctamente a un final de "+materia.Descripcion+" el dia: "+examenFinal.Fecha,"");
-
+    return res.json({
+      msg: "La inscripcion se a realizado con exito",
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({

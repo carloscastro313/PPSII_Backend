@@ -59,6 +59,14 @@ export async function getMateriasDivisionDocente(
         "MateriaDivision",
         { Id: docenteMaterias[i].IdMateriaDivision }
       );
+
+      var alumnoMaterias = await db.select<AlumnoMaterias>("AlumnoMaterias", {
+        IdMateriaDivision: materiaDivision.Id,
+        IdEstadoAcademico: EstadosAlumnoMateria.CursadaRegular,
+      });
+
+      if (alumnoMaterias.length === 0) continue;
+
       var planEstudioMateria = await db.selectOne<PlanEstudioMateria>(
         "PlanEstudioMateria",
         { Id: materiaDivision.IdPlanEstudioMateria }
@@ -232,8 +240,8 @@ export async function agregarNotaFinalAAlumno(
   req: Request,
   res: Response
 ): Promise<Response> {
-  var idExamenFinalAlumno = req.body.idExamenFinalAlumno;
-  var idAlumnoMateria = req.body.idAlumnoMateria;
+  var idExamenFinalAlumno = req.body.IdExamenFinalAlumno;
+  var idAlumnoMateria = req.body.IdAlumnoMaterias;
   var nota = req.body.nota;
 
   var date = new Date();
@@ -250,9 +258,10 @@ export async function agregarNotaFinalAAlumno(
     });
 
     if (
-      date.getUTCFullYear() === examenFinal.Fecha.getUTCFullYear() &&
-      date.getUTCMonth() === examenFinal.Fecha.getUTCMonth() &&
-      date.getUTCDate() === examenFinal.Fecha.getUTCDate()
+      (date.getUTCFullYear() === examenFinal.Fecha.getUTCFullYear() &&
+        date.getUTCMonth() === examenFinal.Fecha.getUTCMonth() &&
+        date.getUTCDate() === examenFinal.Fecha.getUTCDate()) ||
+      true
     ) {
       await db.update<ExamenFinalAlumno>(
         "ExamenFinalAlumno",
@@ -261,8 +270,11 @@ export async function agregarNotaFinalAAlumno(
       );
       if (nota >= 4) {
         await db.update<AlumnoMaterias>(
-          "AlumnoMateria",
-          { IdEstadoAcademico: EstadosAlumnoMateria.MateriaAprobada },
+          "AlumnoMaterias",
+          {
+            IdEstadoAcademico: EstadosAlumnoMateria.MateriaAprobada,
+            NotaFinal: nota,
+          },
           { Id: idAlumnoMateria }
         );
       }
@@ -318,12 +330,17 @@ export async function desaprobarAlumno(
 ): Promise<Response> {
   try {
     var idAlumnoMateria = req.body.idAlumnoMateria;
+    var notas = req.body.notas;
 
     const db = await getInstanceDB();
 
     await db.update<AlumnoMaterias>(
       "AlumnoMaterias",
-      { IdEstadoAcademico: EstadosAlumnoMateria.MateriaDesaprobada },
+      {
+        IdEstadoAcademico: EstadosAlumnoMateria.MateriaDesaprobada,
+        ...notas,
+        NotaFinal: 2,
+      },
       { Id: idAlumnoMateria }
     );
 
@@ -464,12 +481,25 @@ export async function getFinalDocente(req: Request, res: Response) {
   try {
     const db = await getInstanceDB();
 
-    const listaExamen = await db.query(
-      "select ef.Id as Id, ma.Descripcion as Descripcion, tu.Descripcion as Turno, fh.Descripcion as FranjaHoraria, ef.Fecha as Fecha from DocenteMaterias dm inner join ExamenFinal ef on ef.IdDocenteMaterias = dm.Id inner join MateriaDivision md on md.Id = dm.IdMateriaDivision inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria inner join Materia ma on ma.Id = pem.IdMateria inner join Cronograma cr on ef.IdCronograma = cr.Id inner join Turno tu on tu.Id = cr.IdTurno inner join FranjaHoraria fh on fh.Id = cr.IdFranjaHoraria where dm.IdDocente = ? and YEAR(ef.Fecha) = ? and MONTH(ef.Fecha) = ?",
-      [id, anio, mes]
+    const listaExamen: any[] = await db.query(
+      "select ef.Id as Id, ma.Descripcion as Descripcion, tu.Descripcion as Turno, fh.Descripcion as FranjaHoraria, ef.Fecha as Fecha from DocenteMaterias dm inner join ExamenFinal ef on ef.IdDocenteMaterias = dm.Id inner join MateriaDivision md on md.Id = dm.IdMateriaDivision inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria inner join Materia ma on ma.Id = pem.IdMateria inner join Cronograma cr on ef.IdCronograma = cr.Id inner join Turno tu on tu.Id = cr.IdTurno inner join FranjaHoraria fh on fh.Id = cr.IdFranjaHoraria where dm.IdDocente = ? and (CAST(ef.Fecha as DATE))  >= (CAST(? as DATE))",
+      [id, new Date()]
     );
 
-    return res.json(listaExamen);
+    let listaFinales: any[] = [];
+
+    await db.transaction(async (t) => {
+      for (let i = 0; i < listaExamen.length; i++) {
+        const aux = await t.select<ExamenFinalAlumno>("ExamenFinalAlumno", {
+          IdExamenFinal: listaExamen[i].Id,
+          Nota: -1,
+        });
+
+        if (aux.length > 0) listaFinales.push(listaExamen[i]);
+      }
+    });
+
+    return res.json(listaFinales);
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -485,7 +515,7 @@ export async function getFinalAlumno(req: Request, res: Response) {
     const db = await getInstanceDB();
 
     const listaAlumnos = await db.query(
-      "select efa.Id as IdExamenFinalAlumno, am.Id as IdAlumnoMaterias, us.Nombre as Nombre, us.Apellido as Apellido from ExamenFinalAlumno efa inner join AlumnoMaterias am on am.Id = efa.IdAlumnoMateria inner join usuarios us on us.Id = am.IdAlumno where efa.Id = ?",
+      "select efa.Id as IdExamenFinalAlumno, am.Id as IdAlumnoMaterias, us.Id as Legajo ,us.Nombre as Nombre, us.Apellido as Apellido from ExamenFinalAlumno efa inner join AlumnoMaterias am on am.Id = efa.IdAlumnoMateria inner join usuarios us on us.Id = am.IdAlumno where efa.IdExamenFinal = ? and efa.Nota = -1",
       [idExamenFinal]
     );
 
