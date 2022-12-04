@@ -1091,7 +1091,7 @@ export async function checkCanCreateInstancia(
 
   try {
     const instanciasProximas = await db.query(
-      "SELECT * FROM InstanciaInscripcion WHERE IdTipo = ? AND FechaInicio > ? AND FechaFinal > ?",
+      "SELECT * FROM InstanciaInscripcion WHERE IdTipo = ? AND(FechaInicio >= ? OR FechaFinal >= ?)",
       [idTipoInstancia, now.toISOString(), now.toISOString()]
     );
 

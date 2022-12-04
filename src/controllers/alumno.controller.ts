@@ -176,6 +176,27 @@ export async function getInscripcionMateria(req: Request, res: Response) {
   try {
     const db = await getInstanceDB();
 
+    const now = new Date();
+
+    var values: BindValue[] = new Array(3);
+    values[0] = now.toISOString();
+    values[1] = now.toISOString();
+    values[2] = 2;
+
+    console.log(values);
+
+    const instanciaInscripciones = await db.query<InstanciaInscripcion>(
+      "SELECT * FROM InstanciaInscripcion WHERE FechaInicio <= ? AND FechaFinal >= ? AND IdTipo = ?",
+      values
+    );
+
+    if (instanciaInscripciones.length == 0) {
+      return res.status(400).json({
+        msg: "No hay instancias de inscripcion habilitadas",
+        permitido: false,
+      });
+    }
+
     try {
       var usuario = await db.selectOne<Usuario>("Usuarios", { Id: id });
     } catch (error) {
@@ -727,11 +748,12 @@ export async function getFinalesDisponible(req: Request, res: Response) {
       values
     );
 
-    // if (instanciaInscripciones.length == 0) {
-    //   return res.status(400).json({
-    //     msg: "No hay instancias de inscripcion habilitadas",
-    //   });
-    // }
+    if (instanciaInscripciones.length == 0) {
+      return res.status(400).json({
+        msg: "No hay instancias de inscripcion habilitadas",
+        permitido: false,
+      });
+    }
 
     var [carrera] = await db.select<AlumnoCarrera>(
       "AlumnoCarrera",

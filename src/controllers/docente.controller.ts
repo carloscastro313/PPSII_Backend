@@ -258,10 +258,9 @@ export async function agregarNotaFinalAAlumno(
     });
 
     if (
-      (date.getUTCFullYear() === examenFinal.Fecha.getUTCFullYear() &&
-        date.getUTCMonth() === examenFinal.Fecha.getUTCMonth() &&
-        date.getUTCDate() === examenFinal.Fecha.getUTCDate()) ||
-      true
+      date.getUTCFullYear() === examenFinal.Fecha.getUTCFullYear() &&
+      date.getUTCMonth() === examenFinal.Fecha.getUTCMonth() &&
+      date.getUTCDate() === examenFinal.Fecha.getUTCDate()
     ) {
       await db.update<ExamenFinalAlumno>(
         "ExamenFinalAlumno",
