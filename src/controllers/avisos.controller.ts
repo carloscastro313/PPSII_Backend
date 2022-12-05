@@ -51,7 +51,10 @@ export async function createAviso(req: Request, res: Response): Promise<Response
         const db = await getInstanceDB();
 
         await db.transaction(async (t) => {
+            newAviso.IdEmisor = id;
+
             await t.insert<Avisos>("Avisos",{...newAviso});
+            
             idAviso = await t.getLastInsertId();
 
             for(let i = 0; i < newAviso.Receptores.length; i++){
