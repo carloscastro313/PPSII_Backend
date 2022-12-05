@@ -24,6 +24,7 @@ import InstanciaInscripcion from "../interface/InstanciaInscripcion";
 import mandarMail from "../helpers/mailer";
 import { TiposInstanciaInscripciones } from "../enums/tipoInstanciaInscripcion";
 import AlumnoMaterias from "../interface/AlumnoMaterias";
+import { getTokenId } from "../helpers/jwt";
 
 export async function getAdministraciones(
   req: Request,
@@ -1112,9 +1113,12 @@ export async function traerGruposDePersonas(
   req: Request,
   res: Response
 ): Promise<Response> {
-  var response = [];
+  var response = {};
 
   try {
+    const bearerToken = req.header("authorization") as string;
+    const { id } = getTokenId(bearerToken);
+
     const db = await getInstanceDB();
 
     var administraciones = await db.select<Usuario>("Usuarios", {
@@ -1133,12 +1137,12 @@ export async function traerGruposDePersonas(
     console.log("secretarias");
     console.log(secretarias);
 
-    var adminIds = administraciones.map(({ Id }) => Id as number);
-    var secretariasIds = secretarias.map(({ Id }) => Id as number);
+    var adminIds = administraciones.map(({ Id }) => Id as number).filter(id);
+    var secretariasIds = secretarias.map(({ Id }) => Id as number).filter(id);
     var docentesIds = docentes.map(({ Id }) => Id as number);
     var todosLosAlumnosIds = alumnos.map(({ Id }) => Id as number);
 
-    response.push({
+    response = ({
       Administracion: adminIds,
       Secretaria: secretariasIds,
       Docentes: docentesIds,

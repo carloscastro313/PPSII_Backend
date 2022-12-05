@@ -3,6 +3,7 @@ import { errorMsg } from '../const/errors';
 import getInstanceDB  from '../database'
 import { EstadosAlumnoMateria } from '../enums/estadoAlumnoMateria';
 import { TiposUsuario } from '../enums/tiposUsuario';
+import { getTokenId } from '../helpers/jwt';
 import mandarMail from '../helpers/mailer';
 import AlumnoMaterias from '../interface/AlumnoMaterias';
 import Avisos from '../interface/Avisos';
@@ -43,6 +44,8 @@ export async function getAvisoById(req: Request, res: Response): Promise<Respons
 export async function createAviso(req: Request, res: Response): Promise<Response>{
     const newAviso = req.body;
     var idAviso = 0;
+    const bearerToken = req.header("authorization") as string;
+    const { id } = getTokenId(bearerToken);
 
     try{
         const db = await getInstanceDB();
