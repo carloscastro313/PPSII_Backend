@@ -109,14 +109,14 @@ export async function marcarLeido(
   req: Request,
   res: Response
 ): Promise<Response> {
-  const aviso = req.body;
+  const idAvisoUsuarios = req.body.idAvisoUsuarios;
   try {
     const db = await getInstanceDB();
 
     await db.update<AvisoUsuarios>(
       "AvisoUsuarios",
       { Leido: 1 },
-      { IdAviso: aviso.IdAviso, IdUsuario: aviso.IdUsuario }
+      { Id: idAvisoUsuarios }
     );
 
     return res.json({ msg: "Leido" });
@@ -132,7 +132,7 @@ export async function traerAvisosNoLeidosPorUsuario(
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idUsuario = req.params.idUsuario;
+  const idUsuario = req.params.Id;
 
   try {
     const db = await getInstanceDB();
@@ -155,15 +155,37 @@ export async function traerTodosLosAvisosPorUsuario(
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idUsuario = req.params.idUsuario;
+  const bearerToken = req.header("authorization") as string;
+  const { id } = getTokenId(bearerToken);
 
   try {
     const db = await getInstanceDB();
 
-    var avisos = await db.select<AvisoUsuarios>("AvisoUsuarios", {
-      IdUsuario: idUsuario,
+    var avisosUsuario = await db.select<AvisoUsuarios>("AvisoUsuarios", {
+      IdUsuario: id,
     });
+    var avisos = [];
 
+    for (let i = 0; i < avisosUsuario.length; i++) {
+      var avisoActual = await db.selectOne<Avisos>("Avisos", {
+        Id: avisosUsuario[i].IdAviso,
+      });
+      var emisor = await db.selectOne<Usuario>("Usuario", {
+        Id: avisoActual.IdEmisor,
+      });
+
+      avisos.push({
+        Titulo: avisoActual.Titulo,
+        Mensaje: avisoActual.Mensaje,
+        IdAvisoUsuarios: avisosUsuario[i].Id,
+        MailEmisor: emisor.Mail,
+        NombreEmisor: emisor.Nombre,
+        ApellidoEmisor: emisor.Apellido,
+        TipoUsuarioEmisor: emisor.TipoUsuario,
+        IdAviso: avisoActual.Id,
+        Leido: avisosUsuario[i].Leido,
+      });
+    }
     return res.json(avisos);
   } catch (error) {
     console.log(error);
