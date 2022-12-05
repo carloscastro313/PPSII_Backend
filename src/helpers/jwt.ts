@@ -7,7 +7,7 @@ export const generarJWT = (id: string) =>
     },
     process.env["SECRETA"] as string,
     {
-      expiresIn: Math.floor(Date.now() / 1000) + 60 * 60,
+      expiresIn:"10h",
     }
   );
 
