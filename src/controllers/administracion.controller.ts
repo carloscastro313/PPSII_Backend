@@ -1142,12 +1142,12 @@ export async function traerGruposDePersonas(
     var docentesIds = docentes.map(({ Id }) => Id as number);
     var todosLosAlumnosIds = alumnos.map(({ Id }) => Id as number);
 
-    response = ({
+    response = {
       Administracion: adminIds,
       Secretaria: secretariasIds,
       Docentes: docentesIds,
       TodosLosAlumnos: todosLosAlumnosIds,
-    });
+    };
 
     console.log(response);
 
