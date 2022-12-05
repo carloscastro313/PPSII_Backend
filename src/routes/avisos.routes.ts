@@ -14,7 +14,7 @@ router.route('/:idAviso')
 router.route('/noLeidos/:idUsuario')
     .get(validateToken, traerAvisosNoLeidosPorUsuario);
 
-router.route('/todosLosAvisos/:idUsuario')
+router.route('/todosLosAvisos')
     .get(validateToken,traerTodosLosAvisosPorUsuario);
 
 router.route('/marcarLeido')
