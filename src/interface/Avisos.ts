@@ -3,4 +3,5 @@ export default interface Avisos{
     Mensaje: string;
     Titulo: string;
     IdEmisor: number;
+    Fecha: Date;
 }

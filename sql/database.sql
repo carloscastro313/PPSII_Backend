@@ -28,6 +28,7 @@ CREATE TABLE Avisos(
     Mensaje VARCHAR(2000) NOT NULL,
     Titulo VARCHAR(100) NOT NULL,
     IdEmisor INT(11) NOT NULL,
+    Fecha DATETIME,
     CONSTRAINT FK_IdEmisor FOREIGN KEY (IdEmisor) REFERENCES Usuarios(Id)
 );
 
@@ -35,7 +36,7 @@ CREATE TABLE AvisoUsuarios(
     Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdUsuario INT(11) NOT NULL,
     IdAviso INT(11) NOT NULL,
-    Leido BIT NOT NULL DEFAULT 0,
+    Leido INT NOT NULL DEFAULT 0,
     CONSTRAINT FK_IdUsuario FOREIGN KEY (IdUsuario) REFERENCES Usuarios(Id),
     CONSTRAINT FK_IdAviso FOREIGN KEY (IdAviso) REFERENCES Avisos(Id)
 );

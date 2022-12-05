@@ -60,12 +60,14 @@ export async function createAviso(
 
   try {
     const db = await getInstanceDB();
+    const now = new Date();
 
     await db.transaction(async (t) => {
       var aviso: Avisos = {
         IdEmisor: id,
         Titulo: newAviso.Titulo,
         Mensaje: newAviso.Mensaje,
+        Fecha: now
       };
 
       await t.insert<Avisos>("Avisos", aviso);
@@ -183,6 +185,7 @@ export async function traerTodosLosAvisosPorUsuario(
         TipoUsuarioEmisor: emisor.TipoUsuario,
         IdAviso: avisoActual.Id,
         Leido: avisosUsuario[i].Leido,
+        Fecha: avisoActual.Fecha
       });
     }
     return res.json(avisos);
