@@ -1137,8 +1137,12 @@ export async function traerGruposDePersonas(
     console.log("secretarias");
     console.log(secretarias);
 
-    var adminIds = administraciones.map(({ Id }) => Id as number).filter(id);
-    var secretariasIds = secretarias.map(({ Id }) => Id as number).filter(id);
+    var adminIds = administraciones
+      .map(({ Id }) => Id as number)
+      .filter((uid) => uid !== id);
+    var secretariasIds = secretarias
+      .map(({ Id }) => Id as number)
+      .filter((uid) => uid !== id);
     var docentesIds = docentes.map(({ Id }) => Id as number);
     var todosLosAlumnosIds = alumnos.map(({ Id }) => Id as number);
 
