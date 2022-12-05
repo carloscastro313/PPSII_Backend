@@ -170,7 +170,7 @@ export async function traerTodosLosAvisosPorUsuario(
       var avisoActual = await db.selectOne<Avisos>("Avisos", {
         Id: avisosUsuario[i].IdAviso,
       });
-      var emisor = await db.selectOne<Usuario>("Usuario", {
+      var emisor = await db.selectOne<Usuario>("Usuarios", {
         Id: avisoActual.IdEmisor,
       });
 
@@ -178,9 +178,8 @@ export async function traerTodosLosAvisosPorUsuario(
         Titulo: avisoActual.Titulo,
         Mensaje: avisoActual.Mensaje,
         IdAvisoUsuarios: avisosUsuario[i].Id,
-        MailEmisor: emisor.Mail,
-        NombreEmisor: emisor.Nombre,
-        ApellidoEmisor: emisor.Apellido,
+        Mail: emisor.Mail,
+        Nombre: emisor.Nombre + " " + emisor.Apellido,
         TipoUsuarioEmisor: emisor.TipoUsuario,
         IdAviso: avisoActual.Id,
         Leido: avisosUsuario[i].Leido,
