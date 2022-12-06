@@ -173,7 +173,7 @@ CREATE TABLE AlumnoMaterias(
     Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdAlumno INT(11) NOT NULL,
     IdEstadoAcademico INT(11) NOT NULL DEFAULT 1,
-    IdMateria INT(11) NOT NULL,
+    IdMateria INT(11),
     IdMateriaDivision INT(11) NOT NULL,
     NotaPrimerParcial INT(11),
     NotaSegundoParcial INT(11),
@@ -184,8 +184,7 @@ CREATE TABLE AlumnoMaterias(
     NotaFinal INT(11),
     CONSTRAINT FK_IdAlumnoMateria FOREIGN KEY (IdAlumno) REFERENCES Usuarios(Id),
     CONSTRAINT FK_IdEstadoAcademicoAlumnoMaterias FOREIGN KEY (IdEstadoAcademico) REFERENCES EstadoAcademico(Id),
-    CONSTRAINT FK_IdMateriaDivisionAlumno FOREIGN KEY (IdMateriaDivision) REFERENCES MateriaDivision(Id),
-    CONSTRAINT FK_IdMateriaAlumnoMaterias FOREIGN KEY (IdMateria) REFERENCES Materia(Id)
+    CONSTRAINT FK_IdMateriaDivisionAlumno FOREIGN KEY (IdMateriaDivision) REFERENCES MateriaDivision(Id)
 );
 
 CREATE TABLE DocenteMaterias(
