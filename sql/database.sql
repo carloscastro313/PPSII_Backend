@@ -212,3 +212,5 @@ CREATE TABLE ExamenFinalAlumno(
     CONSTRAINT FK_IdAlumnoMateriaExamenFinal FOREIGN KEY (IdAlumnoMateria) REFERENCES AlumnoMaterias(Id),
     CONSTRAINT FK_IdExamenFinalAlumno FOREIGN KEY (IdExamenFinal) REFERENCES ExamenFinal(Id)
 );
+
+INSERT INTO Usuarios (TipoUsuario,Nombre,Apellido,DNI,MAIL,Contraseña) VALUES (1,"Primer","Administrador",43444906,"tomiigiordano@gmail.com","$2b$10$iZRlTzLXH52CSB7cC7iFJeNf3l7K5QwqfKtlyf53XUVvIOEX5XcVa");
