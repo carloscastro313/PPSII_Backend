@@ -5,15 +5,14 @@ import cors from "cors";
 import IndexRoutes from "./routes/index.routes";
 import UsuariosRoutes from "./routes/usuario.routes";
 import TipoUsuariosRoutes from "./routes/tipoUsuario.routes";
-import AlumnosRoutes from "./routes/alumno.routes"; 
-import DocentesRoutes from "./routes/docente.routes"; 
-import SecretariasRoutes from "./routes/secretaria.routes"; 
-import AdministracionesRoutes from "./routes/administracion.routes"; 
-import AvisosRoutes from "./routes/avisos.routes"; 
+import AlumnosRoutes from "./routes/alumno.routes";
+import DocentesRoutes from "./routes/docente.routes";
+import SecretariasRoutes from "./routes/secretaria.routes";
+import AdministracionesRoutes from "./routes/administracion.routes";
+import AvisosRoutes from "./routes/avisos.routes";
 
 export class App {
   private app: Application;
-
   constructor(private port?: number | string) {
     this.app = express();
     this.settings();
@@ -42,8 +41,8 @@ export class App {
     this.app.use("/avisos", AvisosRoutes);
   }
 
-  async listen() {
-    await this.app.listen(this.app.get("port"));
-    console.log("Server on port", this.app.get("port"));
+  async listen(port: string | number) {
+    await this.app.listen(port);
+    console.log("Server on port", port);
   }
 }
