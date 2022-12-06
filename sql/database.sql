@@ -72,8 +72,7 @@ CREATE TABLE PlanEstudio(
     FechaCreacion DATETIME NOT NULL,
     Nombre VARCHAR(100) NOT NULL,
     Duracion INT(11) NOT NULL,
-    CONSTRAINT FK_IdCarreraPlan FOREIGN KEY (IdCarrera) REFERENCES Carrera(
-);
+    CONSTRAINT FK_IdCarreraPlan FOREIGN KEY (IdCarrera) REFERENCES Carrera(Id);
 
 CREATE TABLE Materia(
     Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -174,7 +173,7 @@ CREATE TABLE AlumnoMaterias(
     Id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdAlumno INT(11) NOT NULL,
     IdEstadoAcademico INT(11) NOT NULL DEFAULT 1,
-    IdMateria INT(11) NOT NULL,
+    IdMateria INT(11),
     IdMateriaDivision INT(11) NOT NULL,
     NotaPrimerParcial INT(11),
     NotaSegundoParcial INT(11),
@@ -185,8 +184,7 @@ CREATE TABLE AlumnoMaterias(
     NotaFinal INT(11),
     CONSTRAINT FK_IdAlumnoMateria FOREIGN KEY (IdAlumno) REFERENCES Usuarios(Id),
     CONSTRAINT FK_IdEstadoAcademicoAlumnoMaterias FOREIGN KEY (IdEstadoAcademico) REFERENCES EstadoAcademico(Id),
-    CONSTRAINT FK_IdMateriaDivisionAlumno FOREIGN KEY (IdMateriaDivision) REFERENCES MateriaDivision(Id),
-    CONSTRAINT FK_IdMateriaAlumnoMaterias FOREIGN KEY (IdMateria) REFERENCES Materia(Id)
+    CONSTRAINT FK_IdMateriaDivisionAlumno FOREIGN KEY (IdMateriaDivision) REFERENCES MateriaDivision(Id)
 );
 
 CREATE TABLE DocenteMaterias(
@@ -213,3 +211,5 @@ CREATE TABLE ExamenFinalAlumno(
     CONSTRAINT FK_IdAlumnoMateriaExamenFinal FOREIGN KEY (IdAlumnoMateria) REFERENCES AlumnoMaterias(Id),
     CONSTRAINT FK_IdExamenFinalAlumno FOREIGN KEY (IdExamenFinal) REFERENCES ExamenFinal(Id)
 );
+
+INSERT INTO Usuarios (TipoUsuario,Nombre,Apellido,DNI,MAIL,Contraseña) VALUES (1,"Primer","Administrador",43444906,"tomiigiordano@gmail.com","$2b$10$iZRlTzLXH52CSB7cC7iFJeNf3l7K5QwqfKtlyf53XUVvIOEX5XcVa");
