@@ -940,7 +940,7 @@ export async function createExamenFinalAlumno(req: Request, res: Response) {
     inner join MateriaDivision md on md.Id = am.IdMateriaDivision
     inner join PlanEstudioMateria pem on pem.Id = md.IdPlanEstudioMateria
     inner join Materia ma on ma.Id = pem.IdMateria
-    where ma.Id = ? and am.IdEstadoAcademico = ? and am.IdMateria = ?`,
+    where ma.Id = ? and am.IdEstadoAcademico = ? and am.IdAlumno = ?`,
       [IdMateria, EstadosAlumnoMateria.CursadaAprobada, id]
     );
 
